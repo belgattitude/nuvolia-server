@@ -5,7 +5,7 @@
 #
 
 BASEDIR=$(dirname $(readlink -f $0))
-CONFIG_FILE=$BASEDIR/conf/config.ini
+CONFIG_FILE=$BASEDIR/conf/config.global.ini
 
 # Includes
 source $BASEDIR/lib/bash_ini_parser
@@ -14,7 +14,7 @@ source $BASEDIR/lib/bash_ini_parser
 cfg_parser $CONFIG_FILE
 cfg_section_global
 cfg_section_php
-local IFS=" "
+IFS=" "
 
 install_system_dependencies() { 
     # Propose to download dependencies
@@ -69,8 +69,14 @@ configure_php() {
     if [ "$PHP_EXTENSION_IMAP" = "true" ]; then
        PHP_CONFIGURE_EXTRAS="$PHP_CONFIGURE_EXTRAS --with-imap --with-imap-ssl"
     fi;
+    local IFS=" "
     CONFIGURE="--prefix=$PHP_INSTALL_PATH $PHP_CONFIGURE --enable-cli --enable-cgi --enable-fpm --with-fpm-user=$PHP_FPM_USER --with-fpm-group=$PHP_FPM_GROUP $PHP_CONFIGURE_EXTRAS"
-    ./configure $CONFIGURE;
+    if [ "$PHP_BUILD_USE_CLANG" = "true" ]; then
+       ./configure $CONFIGURE CC=clang CFLAGS="-O3 -march=native"
+    else 
+       ./configure $CONFIGURE CFLAGS="-O3"
+    fi
+
     if [ $? -ne 0 ]; then
       echo "!!! Error, configure failed"
       exit 5
@@ -80,7 +86,18 @@ configure_php() {
 make_and_install_php() {
     cd $PHP_BUILD_PATH/php-$PHP_VERSION;
     echo "[+] Make and install"
-    make
+
+    # Optimize make for cpu_cores from 4 cores...
+    # keep 2 free
+    local CPU_CORES=$(grep "cpu cores" /proc/cpuinfo | wc -l)
+    make clean
+    if [ $CPU_CORES -gt 3 ]; then
+       local CORES=$((CPU_CORES-2))
+       make -j$CORES
+    else
+       make
+    fi
+    
     if [ $? -ne 0 ]; then
       echo "!!! Make error"
       exit 6
