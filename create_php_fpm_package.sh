@@ -27,6 +27,7 @@ install_system_dependencies() {
        local IFS=" "
        sudo apt-get install $PHP_SYSTEM_DEPS
        sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
+       sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
     else
        echo "[+] Warning: installation of system deps skipped"
     fi
@@ -66,9 +67,6 @@ configure_php() {
     cd $PHP_BUILD_PATH/php-$PHP_VERSION;
     echo "[+] Configure"
     make clean
-    if [ "$PHP_EXTENSION_IMAP" = "true" ]; then
-       PHP_CONFIGURE_EXTRAS="$PHP_CONFIGURE_EXTRAS --with-imap --with-imap-ssl"
-    fi;
     local IFS=" "
     CONFIGURE="--prefix=$PHP_INSTALL_PATH $PHP_CONFIGURE --enable-cli --enable-cgi --enable-fpm --with-fpm-user=$PHP_FPM_USER --with-fpm-group=$PHP_FPM_GROUP $PHP_CONFIGURE_EXTRAS"
     if [ "$PHP_BUILD_USE_CLANG" = "true" ]; then
@@ -76,11 +74,11 @@ configure_php() {
     else 
        ./configure $CONFIGURE CFLAGS="-O3"
     fi
-
     if [ $? -ne 0 ]; then
       echo "!!! Error, configure failed"
       exit 5
     fi
+    cd $BASEDIR
 }
 
 make_and_install_php() {
@@ -108,6 +106,7 @@ make_and_install_php() {
     else 
        make install
     fi
+    cd $BASEDIR
 }
 
 set_configuration_files() {
