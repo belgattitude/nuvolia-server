@@ -1,2 +1,4 @@
 # nuvolia-server
-Bundles a custom LAMP/PHP server
+Bash scripts to generate debian packages with latest PHP,
+
+
