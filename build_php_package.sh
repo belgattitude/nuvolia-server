@@ -89,9 +89,9 @@ check_directories() {
     if [ -d $PHP_INSTALL_PATH ]; then
         echo "  * The PHP_INSTALL_PATH already contain a build :"
         echo "  * -> $PHP_INSTALL_PATH"
-        echo "  * Do you want to delete all its content (y/N) ? "
+        echo "  * Do you want to delete all its content (erase/N) ? "
         read resp
-        if [ "$resp" = "Y" -o  "$resp" = "Y" ]; then
+        if [ "$resp" = "erase" ]; then
             rm -rv $PHP_INSTALL_PATH
         fi
     fi
