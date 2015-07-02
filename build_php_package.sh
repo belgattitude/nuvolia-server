@@ -172,6 +172,9 @@ set_configuration_files() {
     if [ ! -d $PHP_INSTALL_PATH/share ]; then 
         sudo mkdir -v $PHP_INSTALL_PATH/share
     fi
+    if [ ! -d $PHP_INSTALL_PATH/share/init.d ]; then 
+        sudo mkdir -v $PHP_INSTALL_PATH/share/init.d
+    fi
     if [ ! -d $PHP_INSTALL_PATH/etc/conf.d ]; then 
         sudo mkdir -v $PHP_INSTALL_PATH/etc/conf.d
     fi
@@ -182,68 +185,34 @@ set_configuration_files() {
     # Preparing default php.ini file
     #
 
-    local FINAL_PATH="$PHP_PACKAGE_PATH"
-    local FINAL_LIB_PATH="$FINAL_PATH/lib"
+    local FINAL_PREFIX_PATH="$PHP_INSTALL_PATH"
+    local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
     local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
     local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
 
-    local TEMP_CONFIG_PATH="$PHP_INSTALL_CONFIG_FILE_PATH"
+    local TEMP_CONFIG_PATH="$PHP_CONFIG_FILE_PATH"
     sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g' $PHP_DEFAULT_INI_TPL \
          > $SHARE_DIRECTORY/php.ini.default
     cp -i $SHARE_DIRECTORY/php.ini.default $TEMP_CONFIG_PATH/php.ini
+
+    #
+    # Preparing default phpfpm conf file
+    #
+    
+    sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{fpm_user}}'|'$PHP_FPM_USER'|g; s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g' $PHP_DEFAULT_FPM_TPL \
+         > $SHARE_DIRECTORY/php-fpm.conf.default
+    cp -i $SHARE_DIRECTORY/php-fpm.conf.default $TEMP_CONFIG_PATH/php-fpm.conf
 
     #
     # Preparing default phpfpm init.d file
     #
 
-    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g' $PHP_DEFAULT_INI_TPL \
-         > $SHARE_DIRECTORY/php.ini.default
-    cp -i $SHARE_DIRECTORY/php.ini.default $TEMP_CONFIG_PATH/php.ini
+    sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; s|'{{name}}'|'$PHP_PACKAGE_NAME'|g' $PHP_DEFAULT_INITD_TPL \
+         > $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
 
-
-
-    #PHP_DEFAULT_FPM_TPL=$PHP_TEMPLATE_PATH/php-fpm.conf.tpl
-    #PHP_DEFAULT_INITD_TPL=$PHP_TEMPLATE_PATH/init.d.php-fpm.tpl
-
-exit
-    cat /web/nuvolia-server/templates/php_config/php.ini-production.tpl | sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g'
-
-    
-exit
-
-    echo cat $PHP_DEFAULT_INI_TPL | sed 's/$INSTALL_DIR/$PACKAGE_DIR/g'
-exit
-echo $PHP_INSTALL_CONFIG_FILE_PATH/php.ini
-
-exit;
-
-    echo $PHP_TEMPLATE_PATH;
-exit;
-
-    # REPLACE ALL links to temp install directory
-    local INSTALL_DIR=$PHP_INSTALL_PATH
-    local PACKAGE_DIR=$PHP_PACKAGE_PREFIX;
-    local PHP_DEFAULT_INI_FILE=$PHP_BUILD_PATH/php-$PHP_VERSION/php.ini-production
-    local PHP_DEFAULT_FPM_FILE=$PHP_INSTALL_PATH/etc/php-fpm.conf.default
-    local PHP_DEFAULT_INITD_FILE=$PHP_BUILD_PATH/php-$PHP_VERSION/sapi/fpm/init.d.php-fpm
-
-
-    sudo cat $PHP_DEFAULT_INI_FILE | sed 's/$INSTALL_DIR/$PACKAGE_DIR/g' > $PHP_CONFIG_FILE_PATH/php.ini.default
-    echo cat $PHP_DEFAULT_sudo sed -i 's|'$INSTALL_DIR'|'$PACKAGE_DIR'|g' $PHP_DEFAULT_FPM_FILE
-exit 
-    sudo cat $PHP_DEFAULT_INITD_FILE | sed 's/$INSTALL_DIR/$PACKAGE_DIR/g' > /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    
-    exit
-    # sudo cp -v $PHP_DEFAULT_INI_FILE $PHP_CONFIG_FILE_PATH/php.ini
-    
-
-    sudo cp -v $PHP_CONFIG_FILE_PATH/php-fpm.conf.default $PHP_CONFIG_FILE_PATH/php-fpm.conf
-    sudo cp -v $PHP_BUILD_PATH/php-$PHP_VERSION/sapi/fpm/init.d.php-fpm /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    
-
-    
-
+    chmod 755 $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
+    sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
+    chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
 }
 
 start_server_php_fpm() {
@@ -262,6 +231,7 @@ create_deb_archive() {
    echo "#########################################################"
    echo " Packaging with: "
    echo "fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   #fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
    fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
    if [ $? -ne 0 ]; then
         build_error_exit 5 "Creation of deb archive failed"
@@ -273,8 +243,6 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-set_configuration_files;
-exit
 
 
 install_system_dependencies;

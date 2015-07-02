@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;
 
 ; All relative paths in this configuration file are relative to PHP's install
-; prefix ({{$php_prefix}}). This prefix can be dynamically changed by using the
+; prefix ({{php_prefix}}). This prefix can be dynamically changed by using the
 ; '-p' argument from the command line.
 
 ; Include one or more files. If glob(3) exists, it is used to include a bunch of
@@ -11,8 +11,11 @@
 ; file.
 ; Relative path can also be used. They will be prefixed by:
 ;  - the global prefix if it's been set (-p argument)
-;  - {{$php_prefix}} otherwise
+;  - {{php_prefix}} otherwise
 ;include=etc/fpm.d/*.conf
+
+
+include=etc/pool.d/*.conf
 
 ;;;;;;;;;;;;;;;;;;
 ; Global Options ;
@@ -20,14 +23,14 @@
 
 [global]
 ; Pid file
-; Note: the default prefix is {{$php_prefix}}/var
+; Note: the default prefix is {{php_prefix}}/var
 ; Default Value: none
-;pid = run/php-fpm.pid
+pid = run/php-fpm.pid
 
 ; Error log file
 ; If it's set to "syslog", log is sent to syslogd instead of being written
 ; in a local file.
-; Note: the default prefix is {{$php_prefix}}/var
+; Note: the default prefix is {{php_prefix}}/var
 ; Default Value: log/php-fpm.log
 ;error_log = log/php-fpm.log
 
@@ -138,7 +141,7 @@
 ; - 'chdir'
 ; - 'php_values'
 ; - 'php_admin_values'
-; When not set, the global prefix (or {{$php_prefix}}) applies instead.
+; When not set, the global prefix (or {{php_prefix}}) applies instead.
 ; Note: This directive can also be relative to the global prefix.
 ; Default Value: none
 ;prefix = /path/to/pools/$pool
@@ -146,8 +149,8 @@
 ; Unix user/group of processes
 ; Note: The user is mandatory. If the group is not set, the default user's group
 ;       will be used.
-user = www-data
-group = www-data
+user = {{fpm_user}}
+group = {{fpm_group}}
 
 ; The address on which to accept FastCGI requests.
 ; Valid syntaxes are:
@@ -161,7 +164,10 @@ group = www-data
 ;                            (IPv6 and IPv4-mapped) on a specific port;
 ;   '/path/to/unix/socket' - to listen on a unix socket.
 ; Note: This value is mandatory.
-listen = 127.0.0.1:9000
+
+;listen = 127.0.0.1:9000
+
+listen = {{fpm_listen}}
 
 ; Set listen(2) backlog.
 ; Default Value: 65535 (-1 on FreeBSD and OpenBSD)
@@ -172,9 +178,11 @@ listen = 127.0.0.1:9000
 ; BSD-derived systems allow connections regardless of permissions. 
 ; Default Values: user and group are set as the running user
 ;                 mode is set to 0660
-;listen.owner = www-data
-;listen.group = www-data
-;listen.mode = 0660
+
+listen.owner = {{fpm_user}}
+listen.group = {{fpm_group}}
+listen.mode = 0660
+
 ; When POSIX Access Control Lists are supported you can set them using
 ; these options, value is a comma separated list of user/group names.
 ; When set, listen.owner and listen.group are ignored
@@ -351,7 +359,7 @@ pm.max_spare_servers = 3
 ;   last request memory:  0
 ;
 ; Note: There is a real-time FPM status monitoring sample web page available
-;       It's available in: {{$php_prefix}}/share/php/fpm/status.html
+;       It's available in: {{php_prefix}}/share/php/fpm/status.html
 ;
 ; Note: The value must start with a leading slash (/). The value can be
 ;       anything, but it may not be a good idea to use the .php extension or it
@@ -526,7 +534,7 @@ pm.max_spare_servers = 3
 ; instead.
 
 ; Note: path INI options can be relative and will be expanded with the prefix
-; (pool, global or {{$php_prefix}})
+; (pool, global or {{php_prefix}})
 
 ; Default Value: nothing is defined by default except the values in php.ini and
 ;                specified at startup with the -d argument
@@ -535,3 +543,4 @@ pm.max_spare_servers = 3
 ;php_admin_value[error_log] = /var/log/fpm-php.www.log
 ;php_admin_flag[log_errors] = on
 ;php_admin_value[memory_limit] = 32M
+

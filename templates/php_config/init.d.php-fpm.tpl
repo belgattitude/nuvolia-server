@@ -1,16 +1,16 @@
 #! /bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          php-fpm
+# Provides:          {{provides}}
 # Required-Start:    $remote_fs $network
 # Required-Stop:     $remote_fs $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: starts php-fpm
-# Description:       starts the PHP FastCGI Process Manager daemon
+# Short-Description: starts {{name}}
+# Description:       {{description}}
 ### END INIT INFO
 
-prefix={{$php_prefix}}
+prefix={{php_prefix}}
 exec_prefix=${prefix}
 
 php_fpm_BIN=${exec_prefix}/sbin/php-fpm
