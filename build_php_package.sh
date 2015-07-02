@@ -92,7 +92,11 @@ check_directories() {
         echo "  * Do you want to delete all its content (erase/N) ? "
         read resp
         if [ "$resp" = "erase" ]; then
-            rm -rv $PHP_INSTALL_PATH
+            if [ "$PHP_INSTALL_REQUIRES_SUDO" = "true" ]; then
+               sudo rm -rv $PHP_INSTALL_PATH
+            else 
+               rm -rv $PHP_INSTALL_PATH
+            fi
         fi
     fi
 }
@@ -236,10 +240,16 @@ start_server_php_fpm() {
     sudo update-rc.d $INITD_SCRIPT_NAME defaults
 }
 
-create_deb_source_directory() {
+prepare_deb_source_directory() {
     
+    if [ ! -d $PHP_PACKAGE_SRC_PATH ]; then
+        mkdir $PHP_PACKAGE_SRC_PATH
+    else
+        rm -r $PHP_PACKAGE_SRC_PATH
+    fi
+
     cp -r $PHP_INSTALL_PATH $PHP_PACKAGE_SRC_PATH
-    
+
     #--after-upgrade scripts/rpm/after_upgrade.sh \
     #--after-install scripts/rpm/after_install.sh \
     #--before-remove scripts/rpm/before_remove.sh \
@@ -252,13 +262,18 @@ create_deb_archive() {
    do 
      PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS --depends $package"
    done 
-   NUVOLIA_PHP_BUILD_DIR="$(dirname $PHP_INSTALL_PATH)/php"
+   
    INITD_SCRIPT="$PHP_INSTALL_PATH/share/init.d/$PHP_INITD_SCRIPT_NAME"
 
    echo "#########################################################"
    echo " Packaging with: "
-   echo "fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
-   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
+   echo "fpm -s dir -t deb -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX \
+           --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
+           --description "$PHP_PACKAGE_DESCRIPTION" \
+           --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS \
+           --deb-init $INITD_SCRIPT \
+           --verbose --force
    if [ $? -ne 0 ]; then
         build_error_exit 5 "Creation of deb archive failed"
    fi
@@ -269,10 +284,9 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-create_deb_source_directory;
-create_deb_archive;
+prepare_deb_source_directory
+create_deb_archive
 exit
-
 
 install_system_dependencies;
 
