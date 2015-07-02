@@ -162,62 +162,87 @@ make_and_install_php() {
     cd $BASEDIR
 }
 
+add_directory_to_installed() {
+    
+    local DIRECTORY="$1"
+    log notice "Creating directory: $DIRECTORY"
+    if [ ! -d $DIRECTORY ]; then
+        if [ "$PHP_INSTALL_REQUIRES_SUDO" = "true" ]; then
+            sudo mkdir -v $DIRECTORY
+        else 
+            mkdir -v $DIRECTORY
+        fi
+        log debug " * Directory: $DIRECTORY created"
+    else 
+        log notice " * Skipped, directory: $DIRECTORY already exists"
+    fi
+}
+
+set_directory_phpfpm_ownership()
+{
+    local DIRECTORY="$1"
+    log notice "Setting FPMUSER ownership to $DIRECTORY"
+    sudo chown $PHP_FPM_USER $DIRECTORY
+    sudo chgrp $PHP_FPM_GROUP $DIRECTORY
+}
+
 set_configuration_files() {
-    if [ ! -d $PHP_INSTALL_PATH/etc/pool.d ]; then 
-        sudo mkdir -v $PHP_INSTALL_PATH/etc/pool.d 
-    fi
-    if [ ! -d $PHP_INSTALL_PATH/tmp ]; then 
-        sudo mkdir -v $PHP_INSTALL_PATH/tmp
-    fi
-    if [ ! -d $PHP_INSTALL_PATH/share ]; then 
-        sudo mkdir -v $PHP_INSTALL_PATH/share
-    fi
-    if [ ! -d $PHP_INSTALL_PATH/share/init.d ]; then 
-        sudo mkdir -v $PHP_INSTALL_PATH/share/init.d
-    fi
-    if [ ! -d $PHP_INSTALL_PATH/etc/conf.d ]; then 
-        sudo mkdir -v $PHP_INSTALL_PATH/etc/conf.d
-    fi
+    add_directory_to_installed "$PHP_INSTALL_PATH/etc/pool.d"
+    add_directory_to_installed "$PHP_INSTALL_PATH/tmp"
+    set_directory_phpfpm_ownership "$PHP_INSTALL_PATH/tmp"
+    sudo chmod 775 "$PHP_INSTALL_PATH/tmp"
+    add_directory_to_installed "$PHP_INSTALL_PATH/share"
+    add_directory_to_installed "$PHP_INSTALL_PATH/share/init.d"
 
     local SHARE_DIRECTORY=$PHP_INSTALL_PATH/share
 
     #
     # Preparing default php.ini file
     #
-
     local FINAL_PREFIX_PATH="$PHP_INSTALL_PATH"
     local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
     local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
     local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
+    
+    
 
-    local TEMP_CONFIG_PATH="$PHP_CONFIG_FILE_PATH"
     sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g' $PHP_DEFAULT_INI_TPL \
-         > $SHARE_DIRECTORY/php.ini.default
-    cp -i $SHARE_DIRECTORY/php.ini.default $TEMP_CONFIG_PATH/php.ini
+        > $TEMP_DIRECTORY/php.ini.default
+    sudo cp $TEMP_DIRECTORY/php.ini.default $SHARE_DIRECTORY/php.ini.default
+    sudo cp -i $SHARE_DIRECTORY/php.ini.default $PHP_CONFIG_FILE_PATH/php.ini
 
     #
     # Preparing default phpfpm conf file
     #
     
     sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{fpm_user}}'|'$PHP_FPM_USER'|g; s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g' $PHP_DEFAULT_FPM_TPL \
-         > $SHARE_DIRECTORY/php-fpm.conf.default
-    cp -i $SHARE_DIRECTORY/php-fpm.conf.default $TEMP_CONFIG_PATH/php-fpm.conf
+         > $TEMP_DIRECTORY/php-fpm.conf.default
+    sudo cp $TEMP_DIRECTORY/php-fpm.conf.default $SHARE_DIRECTORY/php-fpm.conf.default
+    sudo cp -i $SHARE_DIRECTORY/php-fpm.conf.default $PHP_CONFIG_FILE_PATH/php-fpm.conf
 
     #
     # Preparing default phpfpm init.d file
     #
 
     sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; s|'{{name}}'|'$PHP_PACKAGE_NAME'|g' $PHP_DEFAULT_INITD_TPL \
-         > $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
-
-    chmod 755 $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
+         > $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME
+    sudo cp $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
     sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
+    sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
 }
 
 start_server_php_fpm() {
     sudo service $INITD_SCRIPT_NAME start
     sudo update-rc.d $INITD_SCRIPT_NAME defaults
+}
+
+create_deb_source_directory() {
+    
+    cp -r $PHP_INSTALL_PATH $PHP_PACKAGE_SRC_PATH
+    
+    #--after-upgrade scripts/rpm/after_upgrade.sh \
+    #--after-install scripts/rpm/after_install.sh \
+    #--before-remove scripts/rpm/before_remove.sh \
 }
 
 create_deb_archive() {
@@ -228,11 +253,12 @@ create_deb_archive() {
      PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS --depends $package"
    done 
    NUVOLIA_PHP_BUILD_DIR="$(dirname $PHP_INSTALL_PATH)/php"
+   INITD_SCRIPT="$PHP_INSTALL_PATH/share/init.d/$PHP_INITD_SCRIPT_NAME"
+
    echo "#########################################################"
    echo " Packaging with: "
-   echo "fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
-   #fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
-   fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
+   echo "fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
    if [ $? -ne 0 ]; then
         build_error_exit 5 "Creation of deb archive failed"
    fi
@@ -243,15 +269,25 @@ create_deb_archive() {
 # Installation
 ###############################################
 
+create_deb_source_directory;
+create_deb_archive;
+exit
 
 
 install_system_dependencies;
+
 check_directories;
+
 download_php_archive;
+
 configure_php;
+
 make_and_install_php;
+
 set_configuration_files;
+
 #start_server_php_fpm
+
 create_deb_archive;
 
 
