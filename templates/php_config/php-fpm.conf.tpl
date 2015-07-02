@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;
 
 ; All relative paths in this configuration file are relative to PHP's install
-; prefix (/opt/temp/php). This prefix can be dynamically changed by using the
+; prefix ({{$php_prefix}}). This prefix can be dynamically changed by using the
 ; '-p' argument from the command line.
 
 ; Include one or more files. If glob(3) exists, it is used to include a bunch of
@@ -11,7 +11,7 @@
 ; file.
 ; Relative path can also be used. They will be prefixed by:
 ;  - the global prefix if it's been set (-p argument)
-;  - /opt/temp/php otherwise
+;  - {{$php_prefix}} otherwise
 ;include=etc/fpm.d/*.conf
 
 ;;;;;;;;;;;;;;;;;;
@@ -20,14 +20,14 @@
 
 [global]
 ; Pid file
-; Note: the default prefix is /opt/temp/php/var
+; Note: the default prefix is {{$php_prefix}}/var
 ; Default Value: none
 ;pid = run/php-fpm.pid
 
 ; Error log file
 ; If it's set to "syslog", log is sent to syslogd instead of being written
 ; in a local file.
-; Note: the default prefix is /opt/temp/php/var
+; Note: the default prefix is {{$php_prefix}}/var
 ; Default Value: log/php-fpm.log
 ;error_log = log/php-fpm.log
 
@@ -138,7 +138,7 @@
 ; - 'chdir'
 ; - 'php_values'
 ; - 'php_admin_values'
-; When not set, the global prefix (or /opt/temp/php) applies instead.
+; When not set, the global prefix (or {{$php_prefix}}) applies instead.
 ; Note: This directive can also be relative to the global prefix.
 ; Default Value: none
 ;prefix = /path/to/pools/$pool
@@ -351,7 +351,7 @@ pm.max_spare_servers = 3
 ;   last request memory:  0
 ;
 ; Note: There is a real-time FPM status monitoring sample web page available
-;       It's available in: /opt/temp/php/share/php/fpm/status.html
+;       It's available in: {{$php_prefix}}/share/php/fpm/status.html
 ;
 ; Note: The value must start with a leading slash (/). The value can be
 ;       anything, but it may not be a good idea to use the .php extension or it
@@ -526,7 +526,7 @@ pm.max_spare_servers = 3
 ; instead.
 
 ; Note: path INI options can be relative and will be expanded with the prefix
-; (pool, global or /opt/temp/php)
+; (pool, global or {{$php_prefix}})
 
 ; Default Value: nothing is defined by default except the values in php.ini and
 ;                specified at startup with the -d argument
