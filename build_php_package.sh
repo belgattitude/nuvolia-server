@@ -1,20 +1,46 @@
 #!/usr/bin/env bash
+# 
+# Build a php package 
+# 
+
+
 #
-# PHP 5.6 fpm compilation script for Ubuntu 14.04+ 64bits
-# @author Sébastien Vanvelthem
+# Configuration 
 #
 
 BASEDIR=$(dirname $(readlink -f $0))
 CONFIG_FILE=$BASEDIR/conf/config.global.ini
 
+
 # Includes
 source $BASEDIR/lib/bash_ini_parser
+source $BASEDIR/lib/common
 
 # Loading configuration options
+
 cfg_parser $CONFIG_FILE
 cfg_section_global
 cfg_section_php
 IFS=" "
+LOG_PATH=$PHP_LOG_FILE
+
+# script should fail once a command invocation itself fails.
+set -e
+
+# Set the `PHP_BUILD_DEBUG` environment variable to `yes` to trigger the
+# `set -x` call, which in turn outputs every issued shell command to `STDOUT`.
+if [ -n "$PHP_BUILD_DEBUG" ]; then
+    set -x
+fi
+
+# Preserve STDERR on FD3, so we can easily log build errors on FD2 to a file and
+# use FD3 for php-build's visible error messages.
+exec 3<&2
+
+# Redirect everything logged to STDERR (except messages by php-build itself)
+# to the Log file.
+exec 4<> "$LOG_PATH"
+
 
 install_system_dependencies() { 
     # Propose to download dependencies
@@ -26,8 +52,12 @@ install_system_dependencies() {
        #sudo apt-get build-dep php5;
        local IFS=" "
        sudo apt-get install $PHP_SYSTEM_DEPS
-       sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
-       sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
+       if [ ! -f /usr/lib/x86_64-linux-gnu/libc-client.a ]; then
+            sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
+       fi
+       if [ ! -f /usr/include/gmp.h  ]; then
+            sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
+       fi
     else
        echo "[+] Warning: installation of system deps skipped"
     fi
@@ -39,8 +69,30 @@ check_directories() {
     if [ ! -d $PHP_BUILD_PATH ]; then
         mkdir -p $PHP_BUILD_PATH
         if [ $? -ne 0 ]; then
-           echo "!!! Error, Cannot create build_path directory"
-           exit 2 
+           build_error_exit 2 "!!! Error, Cannot create build_path directory"
+        fi
+    fi
+    
+    echo "[+] Checking for previous extracted source archive"
+    if [ -d $PHP_BUILD_PATH/php-$PHP_VERSION ]; then
+        echo "  * The PHP_BUILD_PATH already contains "
+        echo "  * the php sources ".
+        echo "  * -> $PHP_BUILD_PATH/php-$PHP_VERSION"
+        echo "  * Do you want to delete all its content (Y/n) ? "
+        read resp
+        if [ "$resp" = "Y" -o  "$resp" = "" -o "$resp" = "Y" ]; then
+            rm -r $PHP_BUILD_PATH/php-$PHP_VERSION
+        fi
+    fi
+    
+    echo "[+] Checking whether a previous install exists"
+    if [ -d $PHP_INSTALL_PATH ]; then
+        echo "  * The PHP_INSTALL_PATH already contain a build :"
+        echo "  * -> $PHP_INSTALL_PATH"
+        echo "  * Do you want to delete all its content (y/N) ? "
+        read resp
+        if [ "$resp" = "Y" -o  "$resp" = "Y" ]; then
+            rm -rv $PHP_INSTALL_PATH
         fi
     fi
 }
@@ -51,32 +103,33 @@ download_php_archive() {
       echo "  * Archive not found, downloading it...."
       wget -q http://$PHP_MIRROR/get/$PHP_ARCHIVE/from/this/mirror -O $PHP_BUILD_PATH/$PHP_ARCHIVE;
       if [ $? -ne 0 ]; then
-          echo "!!! Error, download of archive failed"
-          exit 3
+            build_error_exit 3 "Download of archive failed"
       fi
    fi
-   echo "[+] Extract archive"
+   echo "[+] Extract archive in $PHP_BUILD_PATH"
    tar jxf $PHP_BUILD_PATH/$PHP_ARCHIVE --directory $PHP_BUILD_PATH
    if [ $? -ne 0 ]; then
-     echo "!!! Error, cannot extract from archive"
-     exit 4
+        build_error_exit 4 "Cannot extract archive"
    fi
 }
 
 configure_php() {
+    if [ ! -d $PHP_BUILD_PATH/php-$PHP_VERSION ]; then
+       build_error_exit 10 "Extracted sources not present in $PHP_BUILD_PATH/php-$PHP_VERSION"
+    fi 
     cd $PHP_BUILD_PATH/php-$PHP_VERSION;
     echo "[+] Configure"
-    make clean
+    make clean || echo "All clean"
     local IFS=" "
     CONFIGURE="--prefix=$PHP_INSTALL_PATH $PHP_CONFIGURE --enable-cli --enable-cgi --enable-fpm --with-fpm-user=$PHP_FPM_USER --with-fpm-group=$PHP_FPM_GROUP $PHP_CONFIGURE_EXTRAS"
+    echo " * Configure options: $CONFIGURE";
     if [ "$PHP_BUILD_USE_CLANG" = "true" ]; then
        ./configure $CONFIGURE CC=clang CFLAGS="-O3 -march=native"
     else 
        ./configure $CONFIGURE CFLAGS="-O3"
     fi
     if [ $? -ne 0 ]; then
-      echo "!!! Error, configure failed"
-      exit 5
+        build_error_exit 5 "PHP configure failed"
     fi
     cd $BASEDIR
 }
@@ -98,7 +151,7 @@ make_and_install_php() {
     
     if [ $? -ne 0 ]; then
       echo "!!! Make error"
-      exit 6
+      build_error_exit 6 "Make failed"
     fi
 
     if [ "$PHP_INSTALL_REQUIRES_SUDO" = "true" ]; then
@@ -110,8 +163,12 @@ make_and_install_php() {
 }
 
 set_configuration_files() {
-    sudo mkdir -v $PHP_INSTALL_PATH/etc/pool.d
-    sudo mkdir -v $PHP_INSTALL_PATH/etc/conf.d
+    if [ ! -d $PHP_INSTALL_PATH/etc/pool.d ]; then 
+        sudo mkdir -v $PHP_INSTALL_PATH/etc/pool.d 
+    fi
+    if [ ! -d $PHP_INSTALL_PATH/etc/conf.d ]; then 
+        sudo mkdir -v $PHP_INSTALL_PATH/etc/conf.d
+    fi
     sudo cp -v $PHP_BUILD_PATH/php-$PHP_VERSION/php.ini-production $PHP_CONFIG_FILE_PATH/php.ini
     sudo cp -v $PHP_CONFIG_FILE_PATH/php-fpm.conf.default $PHP_CONFIG_FILE_PATH/php-fpm.conf
     sudo cp -v $PHP_BUILD_PATH/php-$PHP_VERSION/sapi/fpm/init.d.php-fpm /etc/init.d/$PHP_INITD_SCRIPT_NAME
@@ -136,8 +193,7 @@ create_deb_archive() {
    echo "fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
    fpm -s dir -t deb -C $NUVOLIA_PHP_BUILD_DIR --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description "$PHP_PACKAGE_DESCRIPTION" --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS --verbose --force
    if [ $? -ne 0 ]; then
-     echo "!!! Error, creation of deb package failed"
-     exit 10
+        build_error_exit 5 "Creation of deb archive failed"
    fi
 }
 
@@ -147,14 +203,14 @@ create_deb_archive() {
 ###############################################
 
 
-install_system_dependencies
-check_directories
-download_php_archive
-configure_php
-make_and_install_php
-set_configuration_files
+install_system_dependencies;
+check_directories;
+download_php_archive;
+configure_php;
+make_and_install_php;
+set_configuration_files;
 #start_server_php_fpm
-create_deb_archive
+create_deb_archive;
 
 
 

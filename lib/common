@@ -1,0 +1,100 @@
+function realpath() {
+    local path="$1"
+    local cwd="$(pwd)"
+
+    if [ -z "$path" ]; then
+        echo "realpath: Path is empty" >&3
+        return 1
+    fi
+
+    while [ -n "$path" ]; do
+        cd "${path%/*}"
+        local name="${path##*/}"
+        path="$(readlink "$name" || true)"
+    done
+
+    echo "$(pwd)"
+    cd "$cwd"
+}
+
+
+# Processes the Help front matter of the script and displays it on STDERR
+function display_usage() {
+    grep '^#/' <"$0" | cut -c4- >&3
+}
+
+function display_version() {
+    echo "php-build v$PHP_BUILD_VERSION"
+}
+
+
+# Credits to Sam Stephenson
+function http() {
+    local method="$1"
+    local url="$2"
+    [ -n "$url" ] || return 1
+
+    if type curl &>/dev/null; then
+        "http_${method}_curl" "$url"
+    elif type wget &>/dev/null; then
+        "http_${method}_wget" "$url"
+    else
+        echo "error: please install \`curl\` or \`wget\` and try again" >&2
+        exit 1
+    fi
+}
+
+function http_head_curl() {
+    curl -qsILf "$1"
+}
+
+function http_get_curl() {
+    curl -qsSLf "$1"
+}
+
+function http_head_wget() {
+    wget -q --server-response --spider "$1" 2>&1
+}
+
+function http_get_wget() {
+    wget -nv -O- "$1"
+}
+
+# Logs a given log text with a [marker] to STDERR
+function log() {
+    local marker="$1"
+    local text="$2"
+
+    echo "[$marker]: $text" >&3
+}
+
+
+function build_error_exit() {
+    local build_error_exitcode="$1"
+    local build_error_message="$2"
+    echo "Error: $build_error_message";
+    {
+        echo
+        echo "-----------------"
+        echo "|  BUILD ERROR  |"
+        echo "-----------------"
+        echo
+        echo "Here are the last 10 lines from the log:"
+        echo
+        echo "-----------------------------------------"
+        echo "$(tail -n 10 "$LOG_PATH")"
+        echo "-----------------------------------------"
+        echo
+        echo "The full Log is available at '${LOG_PATH}'."
+        echo "Exit code: $build_error_exitcode"
+        echo "Reason: $build_error_message";
+        
+    } >&3
+
+    # Removes the prefix when the build fails.
+    #if [ -z "$PHP_BUILD_DEBUG" ]; then
+    #    cleanup_abort > /dev/null
+    #fi
+    exit $build_error_exitcode
+}
+
