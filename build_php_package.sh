@@ -3,43 +3,11 @@
 # Build a php package 
 # 
 
-
-#
-# Configuration 
-#
-
 BASEDIR=$(dirname $(readlink -f $0))
-CONFIG_FILE=$BASEDIR/conf/config.global.ini
-
 
 # Includes
-source $BASEDIR/lib/bash_ini_parser
-source $BASEDIR/lib/common
-
-# Loading configuration options
-
-cfg_parser $CONFIG_FILE
-cfg_section_global
-cfg_section_php
-IFS=" "
-LOG_PATH=$PHP_LOG_FILE
-
-# script should fail once a command invocation itself fails.
-set -e
-
-# Set the `PHP_BUILD_DEBUG` environment variable to `yes` to trigger the
-# `set -x` call, which in turn outputs every issued shell command to `STDOUT`.
-if [ -n "$PHP_BUILD_DEBUG" ]; then
-    set -x
-fi
-
-# Preserve STDERR on FD3, so we can easily log build errors on FD2 to a file and
-# use FD3 for php-build's visible error messages.
-exec 3<&2
-
-# Redirect everything logged to STDERR (except messages by php-build itself)
-# to the Log file.
-exec 4<> "$LOG_PATH"
+source $BASEDIR/lib/initializer
+init_configuration "php"
 
 
 install_system_dependencies() { 
@@ -302,6 +270,8 @@ make_and_install_php;
 set_configuration_files;
 
 #start_server_php_fpm
+
+prepare_deb_source_directory
 
 create_deb_archive;
 

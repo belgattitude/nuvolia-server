@@ -82,12 +82,16 @@ function build_error_exit() {
         echo "Here are the last 10 lines from the log:"
         echo
         echo "-----------------------------------------"
-        echo "$(tail -n 10 "$LOG_PATH")"
+        echo "$(tail -n 10 "$build_log_file")"
         echo "-----------------------------------------"
         echo
-        echo "The full Log is available at '${LOG_PATH}'."
+        echo "The full Log is available at '${build_log_file}'."
+        echo "-----------------------------------------"
         echo "Exit code: $build_error_exitcode"
+        echo "-----------------------------------------"
         echo "Reason: $build_error_message";
+        echo "..."
+        
         
     } >&3
 

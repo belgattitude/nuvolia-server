@@ -1,0 +1,64 @@
+
+init_configuration() {
+
+    local module="$1"
+
+    local lib_path=$(dirname $(readlink -f $0))/lib
+    local config_path=$(dirname $(readlink -f $0))/conf
+
+    # Always load main configuration variables
+
+    if [ "$GLOB_CONFIG_HAS_BEEN_LOADED" != "true" ]; then
+
+        source $lib_path/bash_ini_parser
+
+        cfg_parser "$config_path/config.ini"
+        cfg_section_defaults
+        cfg_section_maintainer
+        
+        # If a local file exists, just overwrite previous vars
+        if [ -f "$config_path/config.local.ini" ]; then
+            cfg_parser "$config_path/config.local.ini"
+            cfg_section_defaults
+            cfg_section_maintainer
+        fi
+
+        # Set the `PHP_BUILD_DEBUG` environment variable to `yes` to trigger the
+        # `set -x` call, which in turn outputs every issued shell command to `STDOUT`.
+        if [ -n "$PHP_BUILD_DEBUG" ]; then
+            set -x
+        fi
+
+        # Preserve STDERR on FD3, so we can easily log build errors on FD2 to a file and
+        # use FD3 for php-build's visible error messages.
+        exec 3<&2
+
+        build_log_file="$LOG_PATH/$module-build.log"
+        # Redirect everything logged to STDERR (except messages by php-build itself)
+        # to the Log file.
+        exec 4<> "$build_log_file"
+
+        source $lib_path/common
+
+        GLOB_CONFIG_HAS_BEEN_LOADED="true"
+    fi
+
+    local module_main_file="$config_path/config_$module.ini"
+    local module_local_file="$config_path/config_$module.local.ini"
+    if [ ! -f $module_main_file ]; then
+        build_error_exit 10 "Cannot find module $module configuration module_main_file";
+    fi
+
+    cfg_parser $module_main_file
+    cfg_section_$module
+
+    if [ -f $module_local_file ]; then
+        cfg_parser $module_local_file
+        cfg_section_$module
+    fi
+    
+    # script should fail once a command invocation itself fails.
+    set -e
+    IFS=" "    
+}
+
