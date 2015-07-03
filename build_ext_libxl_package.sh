@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 
-# Build a php package 
+# Build libxl package 
 # 
 
 
@@ -20,7 +20,7 @@ source $BASEDIR/lib/common
 
 cfg_parser $CONFIG_FILE
 cfg_section_global
-cfg_section_php
+cfg_section_ext_libxl
 IFS=" "
 LOG_PATH=$PHP_LOG_FILE
 
@@ -285,9 +285,9 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-
-#create_deb_archive
-#exit
+prepare_deb_source_directory
+create_deb_archive
+exit
 
 install_system_dependencies;
 
