@@ -9,7 +9,6 @@ BASEDIR=$(dirname $(readlink -f $0))
 source $BASEDIR/lib/initializer
 init_configuration "php"
 
-
 install_system_dependencies() { 
     # Propose to download dependencies
     echo "[Question] Would you like to install PHP dependencies* ?"
@@ -158,6 +157,49 @@ set_directory_phpfpm_ownership()
     sudo chgrp $PHP_FPM_GROUP $DIRECTORY
 }
 
+create_config_extensions() {
+
+    local php_config_bin=$PHP_INSTALL_PATH/bin/php-config;
+
+    if [ ! -f $php_config_bin ]; then
+        build_error_exit 11 "Cannot find php-config file '$php_config_bin'"
+    fi
+
+
+
+    local php_ext_dir=$($php_config_bin --extension-dir)
+    if [ ! -d $php_ext_dir ]; then
+        build_error_exit 12 "PHP extension dir'$php_ext_dir' does not exist"
+    fi
+
+    enabled_exts=(${PHP_DEFAULT_ENABLED_EXTS// / })
+
+
+    local tf=$PHP_BUILD_PATH/extensions.ini
+
+    echo "; Common extension configuration file " > $tf;
+    echo " " >> $tf;
+
+    for f in $php_ext_dir/*.so; do
+
+        ext_file=${f##*/}
+        ext=${ext_file%.so}
+
+        echo "; PHP '$ext' extension" >> $tf;
+        if [ $(contains "${enabled_exts[@]}" "$ext") == "y" ]; then
+            echo "extension=$ext_file"  >> $tf;
+        else
+            echo ";extension=$ext_file"  >> $tf;
+        fi
+        echo " " >> $tf;
+    done
+
+    local SHARE_DIRECTORY=$PHP_INSTALL_PATH/share
+    sudo cp $tf $SHARE_DIRECTORY/conf.d.extensions.ini.default
+
+}
+
+
 set_configuration_files() {
     add_directory_to_installed "$PHP_INSTALL_PATH/etc/pool.d"
     add_directory_to_installed "$PHP_INSTALL_PATH/etc/conf.d"
@@ -202,6 +244,9 @@ set_configuration_files() {
     sudo cp $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
     sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
     sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
+
+    create_config_extensions
+    
 }
 
 start_server_php_fpm() {
@@ -224,6 +269,8 @@ prepare_deb_source_directory() {
     #--before-remove scripts/rpm/before_remove.sh \
 }
 
+
+
 create_deb_archive() {
    PHP_PACKAGE_DEPS=""
    local IFS=" "
@@ -237,6 +284,7 @@ create_deb_archive() {
    echo "#########################################################"
    echo " Packaging with: "
    echo "fpm -s dir -t deb -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   cd $BUILD_OUTPUT_DIR
    fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX \
            --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
            --description "$PHP_PACKAGE_DESCRIPTION" \
@@ -246,6 +294,7 @@ create_deb_archive() {
    if [ $? -ne 0 ]; then
         build_error_exit 5 "Creation of deb archive failed"
    fi
+   cd $BASEDIR
 }
 
 
@@ -253,9 +302,6 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-
-#create_deb_archive
-#exit
 
 install_system_dependencies;
 
