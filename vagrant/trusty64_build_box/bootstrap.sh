@@ -193,17 +193,17 @@ install_webmin() {
 #
 # * Install php cli environment and deps
 #
-install_phpcli_env() {
-    echo "* Install php cli minimal env"
-    sudo apt-get --yes install libmariadbclient-dev libunistring0 libvpx-dev uuid-dev libmagic-dev libwrap0-dev libsystemd-daemon-dev libsasl2-dev unixodbc-dev libgd-dev libenchant-dev libpspell-dev libpq-dev libpng12-dev libbz2-dev libssl-dev libsqlite3-dev libmcrypt-dev libfreetype6-dev zlib1g-dev libgmp-dev libgmp3-dev libxml2 libxml2-dev libcurl4-openssl-dev libfreetype6-dev zlib1g-dev libldap2-dev libkrb5-dev libssh-dev libzip-dev libjpeg-progs libpcre++-dev libjpeg8-dev libtiff5-dev libmagick++-dev libmagick++5 libmagickwand-dev libc-client2007e-dev libt1-dev libicu-dev libc-client2007e-dev libxslt1-dev libmcrypt-dev pkg-config libfcgi0ldbl libfcgi-dev libreadline6-dev libevent-dev libmhash-dev libtinfo5 libtinfo-dev
+install_php_build_deps() {
+    echo "* Install php deps minimal env"
+    sudo apt-get --yes install php5-cli php5-mysqlnd libmariadbclient-dev libunistring0 libvpx-dev uuid-dev libmagic-dev libwrap0-dev libsystemd-daemon-dev libsasl2-dev unixodbc-dev libgd-dev libenchant-dev libpspell-dev libpq-dev libpng12-dev libbz2-dev libssl-dev libsqlite3-dev libmcrypt-dev libfreetype6-dev zlib1g-dev libgmp-dev libgmp3-dev libxml2 libxml2-dev libcurl4-openssl-dev libfreetype6-dev zlib1g-dev libldap2-dev libkrb5-dev libssh-dev libzip-dev libjpeg-progs libpcre++-dev libjpeg8-dev libtiff5-dev libmagick++-dev libmagick++5 libmagickwand-dev libc-client2007e-dev libt1-dev libicu-dev libc-client2007e-dev libxslt1-dev libmcrypt-dev pkg-config libfcgi0ldbl libfcgi-dev libreadline6-dev libevent-dev libmhash-dev libtinfo5 libtinfo-dev
     if [ ! -e "/usr/lib/x86_64-linux-gnu/libc-client.a" ]; then 
         sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a
     fi
+    echo "* Install composer"
     if [ ! -e "/usr/local/bin/composer" ]; then 
         curl -sS https://getcomposer.org/installer | php; sudo mv composer.phar /usr/local/bin/composer
     fi
 }
-
 
 
 install_locale "en_GB.UTF-8"
@@ -213,13 +213,13 @@ install_apt_main_sources
 
 install_build_env
 
-# install_puppet()
-# install_webmin() 
+# install_puppet
+# install_webmin 
 
 # install_oracle_java_env
 
-# install_ruby_env()
+# install_ruby_env
 # install_nodejs_env
 
-install_phpcli_env
+install_php_build_deps
 
