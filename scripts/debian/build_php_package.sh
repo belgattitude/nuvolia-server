@@ -18,13 +18,22 @@ install_system_dependencies() {
     if [ "$resp" = "Y" -o "$resp" = "" -o  "$resp" = "Y" ]; then
        #sudo apt-get build-dep php5;
        local IFS=" "
-       sudo apt-get install $PHP_SYSTEM_DEPS
+       sudo apt-get --yes install $PHP_SYSTEM_DEPS
        if [ ! -f /usr/lib/x86_64-linux-gnu/libc-client.a ]; then
             sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
        fi
        if [ ! -f /usr/include/gmp.h  ]; then
             sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
        fi
+
+       #if [ ! -e "/usr/lib/libmysqlclient.so" ]; then
+            # Probably means that we don't use the 
+            # latest mariadb 10+ but the one provided
+            # with trusty... unfortunatly it does not work
+            # sudo apt-get --yes libmysqlclient-dev
+            #echo "cool"
+       #fi 
+
     else
        echo "[+] Warning: installation of system deps skipped"
     fi
@@ -165,8 +174,6 @@ create_config_extensions() {
         build_error_exit 11 "Cannot find php-config file '$php_config_bin'"
     fi
 
-
-
     local php_ext_dir=$($php_config_bin --extension-dir)
     if [ ! -d $php_ext_dir ]; then
         build_error_exit 12 "PHP extension dir'$php_ext_dir' does not exist"
@@ -219,7 +226,6 @@ set_configuration_files() {
     local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
     local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
     
-    
 
     sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g' $PHP_DEFAULT_INI_TPL \
         > $TEMP_DIRECTORY/php.ini.default
@@ -242,8 +248,9 @@ set_configuration_files() {
     sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; s|'{{name}}'|'$PHP_PACKAGE_NAME'|g' $PHP_DEFAULT_INITD_TPL \
          > $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME
     sudo cp $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
-    sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
+    
+    # sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
+    # sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
 
     create_config_extensions
     
@@ -272,6 +279,7 @@ prepare_deb_source_directory() {
 
 
 create_deb_archive() {
+
    PHP_PACKAGE_DEPS=""
    local IFS=" "
    for package in $PHP_SYSTEM_DEPS

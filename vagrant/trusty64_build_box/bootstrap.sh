@@ -215,11 +215,9 @@ install_build_env
 
 # install_puppet
 # install_webmin 
-
 # install_oracle_java_env
-
-# install_ruby_env
 # install_nodejs_env
 
+install_ruby_env
 install_php_build_deps
 
