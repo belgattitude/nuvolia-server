@@ -1,47 +1,35 @@
-# nuvolia-server
-Bash scripts to generate debian packages with latest PHP,
+# Nuvolia server factory
+
+Produce ready-to-install deb packages for latest php on debian/ubuntu.
+
+Heavily rely on Vagrant and puppet for automatic preparation of system boxes, used for compilation and tests.
 
 
 ## Requirements
 
 - Ubuntu 14.04+ 64 bits
-- Build environnement
-
-## Prepare your system
-
-Ensure installation of build essentials and ruby for fpm package management.
-
-```shell
-sudo apt-get install build-essential autoconf bison lemon g++ re2c flex clang ruby ruby-dev shtool libtool git
-```
-
-Optionally install the latest ruby version.
-
-```shell
-sudo apt-add-repository ppa:brightbox/ruby-ng
-sudo apt-get update
-sudo apt-get install ruby1.9.1 ruby1.9.1-dev ruby2.2 ruby2.2-dev ruby-switch
-sudo ruby-switch --set ruby2.2
-```
-
-Install FPM (not php-fpm) for easy package management
-
-```shell
-sudo gem install fpm
-```
+- Vagrant/Virtualbox
 
 
 ## Install php server
 
+For ubuntu/trusty64
 
 ```shell
-./create_php_fpm_package.sh
+cd <my_install_dir>
+https://github.com/belgattitude/nuvolia-server.git
+cd ./nuvolia-server/vagrant/trusty64_build_box
+vagrant up 
+vagrant ssh -c "/shared/install/build_php_package.sh"
 ```
 
-Will create an archive
+If no error, the generated builds are generated on the host in the 'builds' directory.
+
+To install
 
 ```shell
-sudo dpkg -i nuvolia-server-php_5.6.10-trusty1_amd64.deb
+cd ./builds
+sudo dpkg -i nuvolia-server-<version>.deb
 ```
 
 Benchmarks with cclang

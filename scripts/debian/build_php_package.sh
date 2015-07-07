@@ -288,36 +288,42 @@ create_deb_archive() {
      PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS -d $package"
    done 
    # Special case
-   PHP_PACKAGE_DEPS=$PHP_PACKAGE_DEPS' -d "libmariadbclient-dev >= 10.0.20" -d "libmariadbclient18 >= 10.0.20"'
+
+   PHP_PACKAGE_DEPS=$PHP_PACKAGE_DEPS' -d "libmariadbclient-dev (>=10.0.20)" -d "libmariadbclient18 (>=10.0.20)"'
    
    INITD_SCRIPT="$PHP_INSTALL_PATH/share/init.d/$PHP_INITD_SCRIPT_NAME"
 
    echo "#########################################################"
    echo " Packaging with: "
-   echo "fpm -s dir -t deb -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   #echo "fpm -s dir -t deb -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   
    cd $BUILD_OUTPUT_DIR
-   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
-           --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
-           --description "$PHP_PACKAGE_DESCRIPTION" \
-           --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS \
-           --deb-init $INITD_SCRIPT \
-           --verbose --force
 
+   cmd="fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
+           --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
+           --description \"$PHP_PACKAGE_DESCRIPTION\" \
+           --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS \
+           --deb-init $INITD_SCRIPT \
+           --verbose --force"
+   echo $cmd
+   eval $cmd
+   local ret="$?"
+   cd $BASEDIR
+   echo "Return code: $ret";
+   if [ $ret -ne 0 ]; then 
+       build_error_exit 5 "Creation of deb archive failed"
+   fi
     #--after-upgrade scripts/rpm/after_upgrade.sh \
     #--after-install scripts/rpm/after_install.sh \
     #--before-remove scripts/rpm/before_remove.sh \
-
-
-   if [ $? -ne 0 ]; then
-        build_error_exit 5 "Creation of deb archive failed"
-   fi
-   cd $BASEDIR
+   
 }
 
 
 ###############################################
 # Installation
 ###############################################
+
 
 
 install_system_dependencies;
