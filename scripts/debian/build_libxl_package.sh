@@ -24,7 +24,11 @@ check_directories() {
            build_error_exit 2 "!!! Error, Cannot create build_path directory"
         fi
     fi
-    
+   
+    if [ ! -d "$BUILD_OUTPUT_DIR" ]; then
+        mkdir -p "$BUILD_OUTPUT_DIR"
+    fi
+ 
     echo "[+] Checking whether a previous install exists"
     if [ -d $LIBXL_INSTALL_PATH ]; then
         echo "  * The LIBXL_INSTALL_PATH already contain a build :"
@@ -82,10 +86,11 @@ create_deb_archive() {
    echo " Packaging with: "
    
 
-   cmd="fpm -s dir -t deb -C $LIBXL_INSTALL_PATH --prefix $LIBXL_INSTALL_PATH \
+   cmd="fpm -s dir -t deb \
            --name $LIBXL_PACKAGE_NAME --version $LIBXL_PACKAGE_VERSION --url $LIBXL_PACKAGE_URL \
            --description \"$LIBXL_PACKAGE_DESCRIPTION\" \
-           --maintainer \"$LIBXL_PACKAGE_MAINTAINER\" --verbose --force"
+           --maintainer \"$LIBXL_PACKAGE_MAINTAINER\" --verbose --force \
+            $LIBXL_INSTALL_PATH"
    echo $cmd
    eval $cmd
    local ret="$?"

@@ -54,6 +54,11 @@ check_directories() {
         fi
     fi
     
+    if [ ! -d "$BUILD_OUTPUT_DIR" ]; then
+        mkdir -p "$BUILD_OUTPUT_DIR"
+    fi
+
+
     echo "[+] Checking for previous extracted source archive"
     if [ -d $PHP_BUILD_PATH/php-$PHP_VERSION ]; then
         echo "  * The PHP_BUILD_PATH already contains "

@@ -34,6 +34,11 @@ check_directories() {
     fi
 
 
+    if [ ! -d "$BUILD_OUTPUT_DIR" ]; then
+        mkdir -p "$BUILD_OUTPUT_DIR"
+    fi
+
+
     if [ ! -d $PHP_EXT_DIR ]; then
         build_error_exit 11 "PHP extension dir does not exists '$PHP_EXT_DIR'"
     fi
@@ -100,13 +105,13 @@ create_deb_archive() {
    echo " Packaging with: "
 
    local CONF_FILE="$PHP_CONFIG_FILE_PATH/conf.d/extension.phpexcel.ini"
-   sudo cp -i $PHPEXCEL_INI_EXT_TPL $CONF_FILE
+   sudo cp $PHPEXCEL_INI_EXT_TPL $CONF_FILE
 
    cmd="fpm -s dir -t deb \
            --name $PHPEXCEL_PACKAGE_NAME --version $PHPEXCEL_PACKAGE_VERSION --url $PHPEXCEL_PACKAGE_URL \
            --description \"$PHPEXCEL_PACKAGE_DESCRIPTION\" \
+            --depends=\"$PHP_PACKAGE_NAME (=$PHP_PACKAGE_VERSION)\" \
            --depends=\"$LIBXL_PACKAGE_NAME (=$LIBXL_PACKAGE_VERSION)\" \
-           --depends=\"$PHP_PACKAGE_NAME (=$PHP_PACKAGE_VERSION)\" \
            --maintainer \"$PHPEXCEL_PACKAGE_MAINTAINER\" --verbose --force \
             $EXT_FILE $CONF_FILE"
    echo $cmd
