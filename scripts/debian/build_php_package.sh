@@ -4,36 +4,38 @@
 # 
 
 BASEDIR=$(dirname $(readlink -f $0))
+INTERACTIVE=0
 
 # Includes
 source $BASEDIR/lib/initializer
 init_configuration "php"
 
 install_system_dependencies() { 
+
     # Propose to download dependencies
     echo "[Question] Would you like to install PHP dependencies* ?"
     echo " * requires sudo permissions"
     echo " * Process to installation of packages ? (Y/n)";
-    read resp
+    if [ $INTERACTIVE -gt 0 ]; then
+        read resp
+    else
+        resp="Y"
+    fi
     if [ "$resp" = "Y" -o "$resp" = "" -o  "$resp" = "Y" ]; then
-       #sudo apt-get build-dep php5;
-       local IFS=" "
-       sudo apt-get --yes install $PHP_SYSTEM_DEPS
-       if [ ! -f /usr/lib/x86_64-linux-gnu/libc-client.a ]; then
-            sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
-       fi
-       if [ ! -f /usr/include/gmp.h  ]; then
-            sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
-       fi
+        #sudo apt-get build-dep php5;
+        local IFS=" "
+        sudo apt-get --yes install $PHP_SYSTEM_DEPS
+        sudo apt-get --yes install $PHP_SYSTEM_DEPS_MYSQL
+        if [ ! -f /usr/lib/x86_64-linux-gnu/libc-client.a ]; then
+             sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a;
+        fi
+        if [ ! -f /usr/include/gmp.h  ]; then
+             sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h 
+        fi
 
-       #if [ ! -e "/usr/lib/libmysqlclient.so" ]; then
-            # Probably means that we don't use the 
-            # latest mariadb 10+ but the one provided
-            # with trusty... unfortunatly it does not work
-            # sudo apt-get --yes libmysqlclient-dev
-            #echo "cool"
-       #fi 
-
+        if [ ! -e "/usr/lib/libmysqlclient.so.18" ]; then
+            build_error_exit 2 "!!! Error, missing libmysqlclient.so.18, ensure mariadb 10+ installed"
+        fi 
     else
        echo "[+] Warning: installation of system deps skipped"
     fi
@@ -55,8 +57,12 @@ check_directories() {
         echo "  * the php sources ".
         echo "  * -> $PHP_BUILD_PATH/php-$PHP_VERSION"
         echo "  * Do you want to delete all its content (Y/n) ? "
-        read resp
-        if [ "$resp" = "Y" -o  "$resp" = "" -o "$resp" = "Y" ]; then
+        if [ $INTERACTIVE -gt 0 ]; then
+            read resp
+        else
+            resp="Y"
+        fi
+        if [ "$resp" = "Y" -o "$resp" = "" -o  "$resp" = "Y" ]; then
             rm -r $PHP_BUILD_PATH/php-$PHP_VERSION
         fi
     fi
@@ -65,9 +71,13 @@ check_directories() {
     if [ -d $PHP_INSTALL_PATH ]; then
         echo "  * The PHP_INSTALL_PATH already contain a build :"
         echo "  * -> $PHP_INSTALL_PATH"
-        echo "  * Do you want to delete all its content (erase/N) ? "
-        read resp
-        if [ "$resp" = "erase" ]; then
+        echo "  * Do you want to delete all its content (Y/n) ? "
+        if [ $INTERACTIVE -gt 0 ]; then
+            read resp
+        else
+            resp="Y"
+        fi
+        if [ "$resp" = "Y" -o "$resp" = "" -o  "$resp" = "Y" ]; then
             if [ "$PHP_INSTALL_REQUIRES_SUDO" = "true" ]; then
                sudo rm -rv $PHP_INSTALL_PATH
             else 
@@ -97,11 +107,18 @@ configure_php() {
     if [ ! -d $PHP_BUILD_PATH/php-$PHP_VERSION ]; then
        build_error_exit 10 "Extracted sources not present in $PHP_BUILD_PATH/php-$PHP_VERSION"
     fi 
+
+    if [ ! -e "/usr/lib/libmysqlclient.so.18" ]; then
+       build_error_exit 10 "Missing /usr/lib/libmysqlclient.so.18, consider install mariadb 10"
+    fi
+
+
     cd $PHP_BUILD_PATH/php-$PHP_VERSION;
     echo "[+] Configure"
     make clean || echo "All clean"
     local IFS=" "
     CONFIGURE="--prefix=$PHP_INSTALL_PATH $PHP_CONFIGURE --enable-cli --enable-cgi --enable-fpm --with-fpm-user=$PHP_FPM_USER --with-fpm-group=$PHP_FPM_GROUP $PHP_CONFIGURE_EXTRAS"
+
     echo " * Configure options: $CONFIGURE";
     if [ "$PHP_BUILD_USE_CLANG" = "true" ]; then
        ./configure $CONFIGURE CC=clang CFLAGS="-O3 -march=native"
@@ -261,22 +278,6 @@ start_server_php_fpm() {
     sudo update-rc.d $INITD_SCRIPT_NAME defaults
 }
 
-prepare_deb_source_directory() {
-    
-    if [ ! -d $PHP_PACKAGE_SRC_PATH ]; then
-        mkdir $PHP_PACKAGE_SRC_PATH
-    else
-        rm -r $PHP_PACKAGE_SRC_PATH
-    fi
-
-    cp -r $PHP_INSTALL_PATH $PHP_PACKAGE_SRC_PATH
-
-    #--after-upgrade scripts/rpm/after_upgrade.sh \
-    #--after-install scripts/rpm/after_install.sh \
-    #--before-remove scripts/rpm/before_remove.sh \
-}
-
-
 
 create_deb_archive() {
 
@@ -284,21 +285,29 @@ create_deb_archive() {
    local IFS=" "
    for package in $PHP_SYSTEM_DEPS
    do 
-     PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS --depends $package"
+     PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS -d $package"
    done 
+   # Special case
+   PHP_PACKAGE_DEPS=$PHP_PACKAGE_DEPS' -d "libmariadbclient-dev >= 10.0.20" -d "libmariadbclient18 >= 10.0.20"'
    
    INITD_SCRIPT="$PHP_INSTALL_PATH/share/init.d/$PHP_INITD_SCRIPT_NAME"
 
    echo "#########################################################"
    echo " Packaging with: "
-   echo "fpm -s dir -t deb -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
+   echo "fpm -s dir -t deb -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
    cd $BUILD_OUTPUT_DIR
-   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_SRC_PATH --prefix $PHP_PACKAGE_PREFIX \
+   fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
            --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
            --description "$PHP_PACKAGE_DESCRIPTION" \
            --maintainer "$PHP_PACKAGE_MAINTAINER" $PHP_PACKAGE_DEPS \
            --deb-init $INITD_SCRIPT \
            --verbose --force
+
+    #--after-upgrade scripts/rpm/after_upgrade.sh \
+    #--after-install scripts/rpm/after_install.sh \
+    #--before-remove scripts/rpm/before_remove.sh \
+
+
    if [ $? -ne 0 ]; then
         build_error_exit 5 "Creation of deb archive failed"
    fi
@@ -323,9 +332,7 @@ make_and_install_php;
 
 set_configuration_files;
 
-#start_server_php_fpm
-
-prepare_deb_source_directory
+####start_server_php_fpm
 
 create_deb_archive;
 

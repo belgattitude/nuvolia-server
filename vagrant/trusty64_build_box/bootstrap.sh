@@ -49,6 +49,7 @@ install_apt_main_sources() {
 
 # Specific mariadb source
 
+
 install_apt_mariadb_source() {
 
     echo "* Install apt_mariadb_source 10.0"
@@ -62,7 +63,6 @@ install_apt_mariadb_source() {
     # Will be used to know if a apt-get update is needed
     local detected_changes=0
 
-
     if [ ! -e "/etc/apt/sources.list.d/mariadb.list" ]; then
         sudo sh -c 'echo "deb http://ftp.osuosl.org/pub/mariadb/repo/10.0/ubuntu '${DISTRIB_CODENAME}' main" > /etc/apt/sources.list.d/mariadb.list'
         sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
@@ -71,7 +71,7 @@ install_apt_mariadb_source() {
 
     if [ $detected_changes -gt 0 ]; then
         sudo apt-get update
-        sudo apt-get upgrade
+        sudo apt-get --yes upgrade
     fi 
 
 }
@@ -137,9 +137,9 @@ install_oracle_java_env() {
 
 #
 # * Latest Ruby
+# NOTE: puppet does not work with ruby-2.2, switch default to 1.9.1
 #
-
-install_ruby_env() {
+install_ruby_env_2_2() {
 
     echo "* Install latest ruby environment"
 
@@ -155,11 +155,44 @@ install_ruby_env() {
     fi
     
     sudo apt-get --yes install ruby1.9.1 ruby1.9.1-dev ruby2.2 ruby2.2-dev ruby-switch
+    #sudo ruby-switch --set ruby1.9.1
     sudo ruby-switch --set ruby2.2
-    # common ruby gems
-    sudo gem install compass sass fpm
 }
 
+
+#
+# * Ruby env
+#
+install_ruby_env_1_9() {
+
+    echo "* Install ruby environment"
+
+    if [ ! -e "/usr/bin/lsb_release" ]; then
+        sudo apt-get install --yes lsb-release
+    fi
+
+    DISTRIB_CODENAME=$(lsb_release --codename --short)
+
+    if [ ! -e "/etc/apt/sources.list.d/brightbox-ruby-ng-${DISTRIB_CODEBASE}.list" ]; then
+        sudo apt-get --yes install ruby ruby-dev
+    else 
+        sudo apt-get --yes install ruby1.9.1 ruby1.9.1-dev ruby-switch
+        sudo ruby-switch --set ruby1.9.1
+    fi
+}
+
+
+
+install_gem_fpm() {
+    echo " * Install fpm packager with gem"
+    if [ ! -e "/usr/local/bin/fpm" ]; then
+        sudo gem install fpm
+    fi
+}
+
+install_gem_webdev() {
+    sudo gem install compass sass
+}
 
 #
 # * Latest nodejs
@@ -195,6 +228,7 @@ install_webmin() {
 #
 install_php_build_deps() {
     echo "* Install php deps minimal env"
+    sudo apt-get --yes install libmariadbclient18 libmariadbclient-dev
     sudo apt-get --yes install php5-cli php5-mysqlnd libmariadbclient-dev libunistring0 libvpx-dev uuid-dev libmagic-dev libwrap0-dev libsystemd-daemon-dev libsasl2-dev unixodbc-dev libgd-dev libenchant-dev libpspell-dev libpq-dev libpng12-dev libbz2-dev libssl-dev libsqlite3-dev libmcrypt-dev libfreetype6-dev zlib1g-dev libgmp-dev libgmp3-dev libxml2 libxml2-dev libcurl4-openssl-dev libfreetype6-dev zlib1g-dev libldap2-dev libkrb5-dev libssh-dev libzip-dev libjpeg-progs libpcre++-dev libjpeg8-dev libtiff5-dev libmagick++-dev libmagick++5 libmagickwand-dev libc-client2007e-dev libt1-dev libicu-dev libc-client2007e-dev libxslt1-dev libmcrypt-dev pkg-config libfcgi0ldbl libfcgi-dev libreadline6-dev libevent-dev libmhash-dev libtinfo5 libtinfo-dev
     if [ ! -e "/usr/lib/x86_64-linux-gnu/libc-client.a" ]; then 
         sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a
@@ -209,15 +243,21 @@ install_php_build_deps() {
 install_locale "en_GB.UTF-8"
 
 install_apt_main_sources
-# install_apt_mariadb_source
+install_apt_mariadb_source
 
 install_build_env
 
-# install_puppet
+install_ruby_env_1_9
+install_puppet
+
 # install_webmin 
 # install_oracle_java_env
 # install_nodejs_env
 
-install_ruby_env
+#install_latest_ruby_env
+
+install_gem_fpm
+#install_gem_webdev
+
 install_php_build_deps
 
