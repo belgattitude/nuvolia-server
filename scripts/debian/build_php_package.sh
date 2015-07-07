@@ -236,7 +236,7 @@ set_configuration_files() {
     add_directory_to_installed "$PHP_INSTALL_PATH/share"
     add_directory_to_installed "$PHP_INSTALL_PATH/share/init.d"
 
-    local SHARE_DIRECTORY=$PHP_INSTALL_PATH/share
+    local SHARE_DIRECTORY="$PHP_INSTALL_PATH/share"
 
     #
     # Preparing default php.ini file
@@ -245,9 +245,8 @@ set_configuration_files() {
     local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
     local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
     local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
-    
 
-    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}; s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g' $PHP_DEFAULT_INI_TPL \
+    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g; s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g' $PHP_DEFAULT_INI_TPL \
         > $TEMP_DIRECTORY/php.ini.default
     sudo cp $TEMP_DIRECTORY/php.ini.default $SHARE_DIRECTORY/php.ini.default
     sudo cp -i $SHARE_DIRECTORY/php.ini.default $PHP_CONFIG_FILE_PATH/php.ini
@@ -256,7 +255,7 @@ set_configuration_files() {
     #
     # Additional default extension
     #
-    sudo cp -i $PHP_DEFAULT_INI_EXT_TPL $SHARE_DIRECTORY/extension.main.ini.default
+    sudo cp -i "$PHP_DEFAULT_INI_EXT_TPL" "$SHARE_DIRECTORY/extension.main.ini.default"
     
     #
     # Preparing default phpfpm conf file
