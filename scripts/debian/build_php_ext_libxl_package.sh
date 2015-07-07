@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # 
-# Build a php package 
+# Build a php libxl php extension
 # 
 
 BASEDIR=$(dirname $(readlink -f $0))
 INTERACTIVE=0
 
-
 # Includes
 source $BASEDIR/lib/initializer
 
+init_configuration "php"
 init_configuration "libxl"
 
 # script should fail once a command invocation itself fails.

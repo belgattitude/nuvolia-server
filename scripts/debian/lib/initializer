@@ -57,8 +57,7 @@ init_configuration() {
         cfg_section_$module
     fi
     
-    # script should fail once a command invocation itself fails.
-    set -e
+
     IFS=" "    
 }
 

@@ -10,6 +10,9 @@ INTERACTIVE=0
 source $BASEDIR/lib/initializer
 init_configuration "php"
 
+# script should fail once a command invocation itself fails.
+set -e
+
 install_system_dependencies() { 
 
     # Propose to download dependencies
@@ -244,7 +247,7 @@ set_configuration_files() {
     local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
     
 
-    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g' $PHP_DEFAULT_INI_TPL \
+    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}; s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g' $PHP_DEFAULT_INI_TPL \
         > $TEMP_DIRECTORY/php.ini.default
     sudo cp $TEMP_DIRECTORY/php.ini.default $SHARE_DIRECTORY/php.ini.default
     sudo cp -i $SHARE_DIRECTORY/php.ini.default $PHP_CONFIG_FILE_PATH/php.ini
@@ -295,7 +298,6 @@ create_deb_archive() {
 
    echo "#########################################################"
    echo " Packaging with: "
-   #echo "fpm -s dir -t deb -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL --description \"$PHP_PACKAGE_DESCRIPTION\" --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS --verbose --force"
    
    cd $BUILD_OUTPUT_DIR
 
