@@ -252,6 +252,12 @@ set_configuration_files() {
     sudo cp $TEMP_DIRECTORY/php.ini.default $SHARE_DIRECTORY/php.ini.default
     sudo cp -i $SHARE_DIRECTORY/php.ini.default $PHP_CONFIG_FILE_PATH/php.ini
 
+
+    #
+    # Additional default extension
+    #
+    sudo cp -i $PHP_DEFAULT_INI_EXT_TPL $SHARE_DIRECTORY/extension.main.ini.default
+    
     #
     # Preparing default phpfpm conf file
     #
@@ -318,7 +324,7 @@ create_deb_archive() {
     #--after-upgrade scripts/rpm/after_upgrade.sh \
     #--after-install scripts/rpm/after_install.sh \
     #--before-remove scripts/rpm/before_remove.sh \
-   
+   #sudo cp -i $SHARE_DIRECTORY/extension.main.ini.default $PHP_CONFIG_FILE_PATH/config.d/extension.main.ini
 }
 
 
