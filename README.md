@@ -19,7 +19,8 @@ For ubuntu/trusty64
 cd <my_install_dir>
 https://github.com/belgattitude/nuvolia-server.git
 cd ./nuvolia-server/vagrant/trusty64_build_box
-vagrant up 
+vagrant up
+vagrant provision 
 vagrant ssh -c "/shared/install/build_libxl_package.sh"
 vagrant ssh -c "/shared/install/build_php_package.sh"
 vagrant ssh -c "/shared/install/build_php_ext_libxl_package.sh"
