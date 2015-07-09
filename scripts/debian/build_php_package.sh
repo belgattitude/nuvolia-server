@@ -309,7 +309,7 @@ set_configuration_files() {
     #
     # Additional default extension
     #
-    sudo cp -i "$PHP_DEFAULT_INI_EXT_TPL" "$SHARE_DIRECTORY/extension.main.ini.default"
+    sudo cp "$PHP_DEFAULT_INI_EXT_TPL" "$SHARE_DIRECTORY/extension.opcache.ini.default"
     
     #
     # Preparing default phpfpm conf file
