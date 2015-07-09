@@ -231,6 +231,50 @@ create_config_extensions() {
 
 }
 
+install_pear_libs() {
+
+    pear_command=$PHP_INSTALL_PATH/bin/pear
+    sudo $pear_command update-channels  
+    sudo $pear_command upgrade
+
+    local IFS=" "
+    for pear_package in $PHP_PEAR_INSTALL
+    do 
+        echo " * Installing $pear_package:"
+        sudo $pear_command --alldeps install $pear_package
+    done 
+
+}
+
+
+install_pecl_extensions() {
+
+    pecl_command=$PHP_INSTALL_PATH/bin/pecl
+    sudo $pecl_command update-channels || echo "nothing to do"
+
+    local IFS=" "
+    for pecl_package in $PHP_PECL_INSTALL
+    do 
+        echo " * Installing $pecl_package:"
+        # The sh -c is meant to send an enter when imagick extension for example
+        # ask an input
+        sudo sh -c 'printf "\n" | '$pecl_command' install '$pecl_package'' || echo "Install failed or skipped, actually we don't know, êcl magic ;)"
+    done 
+
+    
+
+
+}
+
+fix_permissions() {
+
+    local php_config="$PHP_INSTALL_PATH/bin/php-config"
+    local php_ext_dir=$($php_config --extension-dir)
+    sudo chmod -x $php_ext_dir/*.so
+
+}
+
+
 
 set_configuration_files() {
     add_directory_to_installed "$PHP_INSTALL_PATH/etc/pool.d"
@@ -246,10 +290,15 @@ set_configuration_files() {
     #
     # Preparing default php.ini file
     #
+
+    local php_config="$PHP_INSTALL_PATH/bin/php-config"
+    local php_ext_dir=$($php_config --extension-dir)
+
+
     local FINAL_PREFIX_PATH="$PHP_INSTALL_PATH"
     local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
     local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
-    local FINAL_EXT_PATH="$FINAL_LIB_PATH/php/extensions/no-debug-non-zts-20131226"
+    local FINAL_EXT_PATH="$php_ext_dir"
 
     sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g; s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g' $PHP_DEFAULT_INI_TPL \
         > $TEMP_DIRECTORY/php.ini.default
@@ -292,6 +341,7 @@ start_server_php_fpm() {
 }
 
 
+
 create_deb_archive() {
 
    PHP_PACKAGE_DEPS=""
@@ -300,9 +350,18 @@ create_deb_archive() {
    do 
      PHP_PACKAGE_DEPS="$PHP_PACKAGE_DEPS -d $package"
    done 
+
+   PHP_PACKAGE_RECOMMEND=""
+   local IFS=" "
+   for package in $PHP_SYSTEM_DEPS_RECOMMEND
+   do 
+     PHP_PACKAGE_RECOMMEND="$PHP_PACKAGE_RECOMMEND --deb-recommends $package"
+   done 
+
    # Special case
 
    PHP_PACKAGE_DEPS=$PHP_PACKAGE_DEPS' -d "libmariadbclient-dev (>=10.0.20)" -d "libmariadbclient18 (>=10.0.20)"'
+   PHP_PACKAGE_RECOMMEND=$PHP_PACKAGE_RECOMMEND' '
    
    INITD_SCRIPT="$PHP_INSTALL_PATH/share/init.d/$PHP_INITD_SCRIPT_NAME"
 
@@ -314,7 +373,7 @@ create_deb_archive() {
    cmd="fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
            --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
            --description \"$PHP_PACKAGE_DESCRIPTION\" \
-           --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS \
+           --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS $PHP_PACKAGE_RECOMMEND \
            --deb-init $INITD_SCRIPT \
            --verbose --force"
    echo $cmd
@@ -335,8 +394,8 @@ create_deb_archive() {
 ###############################################
 # Installation
 ###############################################
-
-
+create_deb_archive;
+exit
 
 install_system_dependencies;
 
@@ -348,7 +407,14 @@ configure_php;
 
 make_and_install_php;
 
+install_pecl_extensions;
+
 set_configuration_files;
+
+install_pear_libs;
+install_pecl_extensions;
+
+fix_permissions;
 
 ####start_server_php_fpm
 

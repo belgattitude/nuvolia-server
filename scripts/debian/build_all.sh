@@ -12,5 +12,5 @@ $BASEDIR/build_php_package.sh;
 $BASEDIR/build_php_ext_phpexcel_package.sh;
 
 # Start to test_all
-#sudo add-apt-repository ppa:ondrej/apache2
+sudo add-apt-repository ppa:ondrej/apache2
 sudo apt-get --yes install apache2 apache2-utils apache2-dev
