@@ -274,6 +274,66 @@ fix_permissions() {
 
 }
 
+process_file_template() {
+
+    local tpl_file="$1"
+    local dest_file="$2"
+
+    log notice "Processing template substitution from '$tpl_file' to '$dest_file'"
+
+    if [ ! -f $tpl_file ]; then
+        build_error_exit 10 "Template missing: $tpl_file"
+    fi
+
+    local temp_file=$TEMP_DIRECTORY/$(basename $tpl_file)
+    
+    if [ -e $temp_file ]; then
+        rm $temp_file
+    fi
+
+    local php_config="$PHP_INSTALL_PATH/bin/php-config"
+    local php_ext_dir=$($php_config --extension-dir)
+
+    local SHARE_DIRECTORY="$PHP_INSTALL_PATH/share"
+    local FINAL_PREFIX_PATH="$PHP_INSTALL_PATH"
+    local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
+    local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
+    local FINAL_EXT_PATH="$php_ext_dir"
+
+
+    local cmd="sed "
+    cmd=$cmd"'s|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; "
+    cmd=$cmd"s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g; "
+    cmd=$cmd"s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g; "
+    cmd=$cmd"s|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; "
+    cmd=$cmd"s|'{{fpm_user}}'|'$PHP_FPM_USER'|g; "
+    cmd=$cmd"s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; "
+    cmd=$cmd"s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g; "
+    cmd=$cmd"s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
+    cmd=$cmd"s|'{{name}}'|'$PHP_PACKAGE_NAME'|g'"
+
+    cmd="$cmd $tpl_file"
+    log debug "$cmd"
+
+    # Will give something like
+    # sed 's|'{{php_include_path}}'|'/opt/nuvolia/php/lib/php'|g; s|'{{php_extension_dir}}'|'/opt/nuvolia/php/lib/php/extensions/no-debug-non-zts-20131226'|g; s|'{{tz}}'|'Europe/Brussels'|g; s|'{{php_prefix}}'|'/opt/nuvolia/php'|g; s|'{{fpm_user}}'|'www-data'|g; s|'{{fpm_group}}'|'www-data'|g; s|'{{fpm_listen}}'|'var/run/php5-fpm.sock'|g; s|'{{provides}}'|'nuvolia-phpfpm'|g; s|'{{name}}'|'nuvolia-php'|g' /shared/install/templates/php/php.template.ini > /home/vagrant/tmp/php.template.ini     
+    
+    eval $cmd  > $temp_file
+
+    if [ ! -f $temp_file ]; then
+        build_error_exit 10 "Template substitution error, temp '$temp_file' was not created"
+    fi
+
+    sudo cp $temp_file $dest_file
+
+    if [ ! -f $dest_file ]; then
+        build_error_exit 10 "Template substitution error, final '$dest_file' was not created"
+    fi
+
+    
+
+}
+
 
 
 set_configuration_files() {
@@ -284,52 +344,20 @@ set_configuration_files() {
     sudo chmod 775 "$PHP_INSTALL_PATH/tmp"
     add_directory_to_installed "$PHP_INSTALL_PATH/share"
     add_directory_to_installed "$PHP_INSTALL_PATH/share/init.d"
+    add_directory_to_installed "$PHP_INSTALL_PATH/share/deb-scripts"
 
     local SHARE_DIRECTORY="$PHP_INSTALL_PATH/share"
 
-    #
-    # Preparing default php.ini file
-    #
+    process_file_template $PHP_DEFAULT_INI_TPL $SHARE_DIRECTORY/php.ini.default
+    process_file_template $PHP_DEFAULT_PROD_INI_TPL $SHARE_DIRECTORY/php-prod.ini.default
 
-    local php_config="$PHP_INSTALL_PATH/bin/php-config"
-    local php_ext_dir=$($php_config --extension-dir)
+    process_file_template $PHP_DEFAULT_OPCACHE_TPL $SHARE_DIRECTORY/extension.opcache.ini.default
+    process_file_template $PHP_DEFAULT_FPM_TPL $SHARE_DIRECTORY/php-fpm.conf.default
+    process_file_template $PHP_DEFAULT_INITD_TPL $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
 
+    process_file_template $PHP_TEMPLATE_PATH/deb_scripts_vars.template.sh "$SHARE_DIRECTORY/deb-scripts/deb_scripts_vars.sh"
 
-    local FINAL_PREFIX_PATH="$PHP_INSTALL_PATH"
-    local FINAL_LIB_PATH="$FINAL_PREFIX_PATH/lib"
-    local FINAL_INC_PATH="$FINAL_LIB_PATH/php"
-    local FINAL_EXT_PATH="$php_ext_dir"
-
-    sed 's|'{{php_include_path}}'|'$FINAL_INC_PATH'|g; s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g; s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g' $PHP_DEFAULT_INI_TPL \
-        > $TEMP_DIRECTORY/php.ini.default
-    sudo cp $TEMP_DIRECTORY/php.ini.default $SHARE_DIRECTORY/php.ini.default
-    sudo cp -i $SHARE_DIRECTORY/php.ini.default $PHP_CONFIG_FILE_PATH/php.ini
-
-
-    #
-    # Additional default extension
-    #
-    sudo cp "$PHP_DEFAULT_INI_EXT_TPL" "$SHARE_DIRECTORY/extension.opcache.ini.default"
-    
-    #
-    # Preparing default phpfpm conf file
-    #
-    
-    sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{fpm_user}}'|'$PHP_FPM_USER'|g; s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g' $PHP_DEFAULT_FPM_TPL \
-         > $TEMP_DIRECTORY/php-fpm.conf.default
-    sudo cp $TEMP_DIRECTORY/php-fpm.conf.default $SHARE_DIRECTORY/php-fpm.conf.default
-    sudo cp -i $SHARE_DIRECTORY/php-fpm.conf.default $PHP_CONFIG_FILE_PATH/php-fpm.conf
-
-    #
-    # Preparing default phpfpm init.d file
-    #
-
-    sed 's|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; s|'{{name}}'|'$PHP_PACKAGE_NAME'|g' $PHP_DEFAULT_INITD_TPL \
-         > $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME
-    sudo cp $TEMP_DIRECTORY/$PHP_INITD_SCRIPT_NAME $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
-    
-    # sudo cp -vi $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME /etc/init.d/$PHP_INITD_SCRIPT_NAME
-    # sudo chmod 755 /etc/init.d/$PHP_INITD_SCRIPT_NAME
+    sudo cp $BASEDIR/deb-scripts/php/*.sh $SHARE_DIRECTORY/deb-scripts
 
     create_config_extensions
     
@@ -370,10 +398,25 @@ create_deb_archive() {
    
    cd $BUILD_OUTPUT_DIR
 
+   local deb_scripts_path="$PHP_INSTALL_PATH/share/deb-scripts"
+
+   local scripts=""
+   scripts="$scripts --before-install $deb_scripts_path/before_install.sh"
+   scripts="$scripts --after-install $deb_scripts_path/after_install.sh"
+   scripts="$scripts --before-upgrade $deb_scripts_path/before_upgrade.sh"
+   scripts="$scripts --after-upgrade $deb_scripts_path/after_upgrade.sh"
+   scripts="$scripts --before-remove $deb_scripts_path/before_remove.sh"
+
+    #--after-upgrade scripts/rpm/after_upgrade.sh \
+    #--after-install scripts/rpm/after_install.sh \
+    #--before-remove scripts/rpm/before_remove.sh \
+
+
    cmd="fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
            --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
            --description \"$PHP_PACKAGE_DESCRIPTION\" \
            --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS $PHP_PACKAGE_RECOMMEND \
+           $scripts \
            --deb-init $INITD_SCRIPT \
            --verbose --force"
    echo $cmd
@@ -384,16 +427,15 @@ create_deb_archive() {
    if [ $ret -ne 0 ]; then 
        build_error_exit 5 "Creation of deb archive failed"
    fi
-    #--after-upgrade scripts/rpm/after_upgrade.sh \
-    #--after-install scripts/rpm/after_install.sh \
-    #--before-remove scripts/rpm/before_remove.sh \
-   #sudo cp -i $SHARE_DIRECTORY/extension.main.ini.default $PHP_CONFIG_FILE_PATH/config.d/extension.main.ini
+   
 }
 
 
 ###############################################
 # Installation
 ###############################################
+
+#set_configuration_files;
 create_deb_archive;
 exit
 
