@@ -9,5 +9,4 @@ set -e
 
 source "$BASEDIR/common.sh"
 
-echo "COOL"
-exit 10
+echo "Success"

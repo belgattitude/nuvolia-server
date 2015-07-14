@@ -9,6 +9,11 @@ set -e
 
 source "$BASEDIR/common.sh"
 
-set_default_php_ini;
-set_default_extensions_ini;
-set_default_phpfpm_conf;
+set_all_default_config_files
+ensure_init_d
+
+start_phpfpm
+
+ensure_always_start
+
+echo "Success"

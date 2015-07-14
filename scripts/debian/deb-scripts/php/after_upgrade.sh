@@ -3,13 +3,17 @@
 # Scripts to execute after to nuvolia-server-php upgrade
 # 
 
-INITD_SCRIPT=/etc/init.d/nuvolia-server-php
+BASEDIR=$(dirname $(readlink -f $0))
 
-function start_phpfpm() {
-    if [ -e $INITD_SCRIPT ]; then
-        echo "Start php-fpm after upgrade"
-        $INITD_SCRIPT start
-    fi
-)
+set -e
 
-start_phpfpm
+source "$BASEDIR/common.sh"
+
+set_all_default_config_files
+ensure_init_d
+
+restart_phpfpm
+
+ensure_always_start
+
+echo "Success"

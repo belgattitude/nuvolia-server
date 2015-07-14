@@ -2,16 +2,19 @@
 # 
 # 
 
-PREFIX=/opt/nuvolia/php
-INITD_SCRIPT=/etc/init.d/nuvolia-php
+BASEDIR=$(dirname $(readlink -f $0))
+
+set -e
+
+source "$BASEDIR/common.sh"
 
 
-function stop_phpfpm() {
-    if [ -e $INITD_SCRIPT ]; then
-        echo "Stopping php-fpm after upgrade"
-        $INITD_SCRIPT stop
-    fi
-)
+stop_phpfpm
+
+remove_from_startup
+remove_init_d
+
+echo "Success"
 
 
-stop_phpfpm;
+

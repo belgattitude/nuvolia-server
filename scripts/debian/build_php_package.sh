@@ -310,6 +310,7 @@ process_file_template() {
     cmd=$cmd"s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; "
     cmd=$cmd"s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g; "
     cmd=$cmd"s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
+    cmd=$cmd"s|'{{init_d_name}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
     cmd=$cmd"s|'{{name}}'|'$PHP_PACKAGE_NAME'|g'"
 
     cmd="$cmd $tpl_file"
@@ -406,11 +407,6 @@ create_deb_archive() {
    scripts="$scripts --before-upgrade $deb_scripts_path/before_upgrade.sh"
    scripts="$scripts --after-upgrade $deb_scripts_path/after_upgrade.sh"
    scripts="$scripts --before-remove $deb_scripts_path/before_remove.sh"
-
-    #--after-upgrade scripts/rpm/after_upgrade.sh \
-    #--after-install scripts/rpm/after_install.sh \
-    #--before-remove scripts/rpm/before_remove.sh \
-
 
    cmd="fpm -s dir -t deb --deb-init $INITD_SCRIPT -C $PHP_PACKAGE_PATH --prefix $PHP_PACKAGE_PREFIX \
            --name $PHP_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
