@@ -446,9 +446,6 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-set_configuration_files;
-create_deb_archive;
-exit
 
 install_system_dependencies;
 
