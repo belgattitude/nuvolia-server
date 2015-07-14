@@ -187,19 +187,22 @@ install_gem_fpm() {
     echo " * Install fpm packager with gem"
     if [ ! -e "/usr/local/bin/fpm" ]; then
         sudo gem install fpm
-        # Hack install latest template
-        # Horrible patch ;)
-        if [ -e "/var/lib/gems/2.2.0/gems/fpm-1.3.3/templates/deb" ]; then
-            sudo wget https://raw.githubusercontent.com/jordansissel/fpm/master/templates/deb/prerm_upgrade.sh.erb -O fpm.patch
-            sudo cp fpm.patch /var/lib/gems/2.2.0/gems/fpm-1.3.3/templates/deb/prerm_upgrade.sh.erb
-        fi
-        if [ -e "/var/lib/gems/1.9.1/gems/fpm-1.3.3/templates/deb" ]; then
-            sudo wget https://raw.githubusercontent.com/jordansissel/fpm/master/templates/deb/prerm_upgrade.sh.erb -O fpm.patch
-            sudo cp fpm.patch /var/lib/gems/1.9.1/gems/fpm-1.3.3/templates/deb/prerm_upgrade.sh.erb
-        fi
-
-
     fi
+}
+
+install_horrible_fpm_patch() {
+
+    # Hack install latest template
+    # Horrible patch ;)
+    if [ -e "/var/lib/gems/2.2.0/gems/fpm-1.3.3/templates/deb" ]; then
+        sudo wget https://raw.githubusercontent.com/jordansissel/fpm/master/templates/deb/prerm_upgrade.sh.erb -O fpm.patch
+        sudo cp fpm.patch /var/lib/gems/2.2.0/gems/fpm-1.3.3/templates/deb/prerm_upgrade.sh.erb
+    fi
+    if [ -e "/var/lib/gems/1.9.1/gems/fpm-1.3.3/templates/deb" ]; then
+        sudo wget https://raw.githubusercontent.com/jordansissel/fpm/master/templates/deb/prerm_upgrade.sh.erb -O fpm.patch
+        sudo cp fpm.patch /var/lib/gems/1.9.1/gems/fpm-1.3.3/templates/deb/prerm_upgrade.sh.erb
+    fi
+
 }
 
 install_gem_webdev() {
@@ -270,6 +273,7 @@ install_puppet
 #install_latest_ruby_env
 
 install_gem_fpm
+install_horrible_fpm_patch
 
 #install_gem_webdev
 
