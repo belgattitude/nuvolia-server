@@ -306,12 +306,14 @@ process_file_template() {
     cmd=$cmd"s|'{{php_extension_dir}}'|'$FINAL_EXT_PATH'|g; "
     cmd=$cmd"s|'{{tz}}'|'$PHP_INI_TIMEZONE'|g; "
     cmd=$cmd"s|'{{php_prefix}}'|'$FINAL_PREFIX_PATH'|g; "
+    cmd=$cmd"s|'{{php_package_name}}'|'$PHP_PACKAGE_NAME'|g; "
     cmd=$cmd"s|'{{fpm_user}}'|'$PHP_FPM_USER'|g; "
     cmd=$cmd"s|'{{fpm_group}}'|'$PHP_FPM_GROUP'|g; "
     cmd=$cmd"s|'{{fpm_listen}}'|'$PHP_FPM_LISTEN'|g; "
     cmd=$cmd"s|'{{provides}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
     cmd=$cmd"s|'{{init_d_name}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
     cmd=$cmd"s|'{{name}}'|'$PHP_PACKAGE_NAME'|g'"
+
 
     cmd="$cmd $tpl_file"
     log debug "$cmd"
@@ -338,6 +340,7 @@ process_file_template() {
 
 
 set_configuration_files() {
+
     add_directory_to_installed "$PHP_INSTALL_PATH/etc/pool.d"
     add_directory_to_installed "$PHP_INSTALL_PATH/etc/conf.d"
     add_directory_to_installed "$PHP_INSTALL_PATH/tmp"
@@ -345,6 +348,7 @@ set_configuration_files() {
     sudo chmod 775 "$PHP_INSTALL_PATH/tmp"
     add_directory_to_installed "$PHP_INSTALL_PATH/share"
     add_directory_to_installed "$PHP_INSTALL_PATH/share/init.d"
+    add_directory_to_installed "$PHP_INSTALL_PATH/share/apache2"
     add_directory_to_installed "$PHP_INSTALL_PATH/share/deb-scripts"
 
     local SHARE_DIRECTORY="$PHP_INSTALL_PATH/share"
@@ -355,10 +359,21 @@ set_configuration_files() {
     process_file_template $PHP_DEFAULT_OPCACHE_TPL $SHARE_DIRECTORY/extension.opcache.ini.default
     process_file_template $PHP_DEFAULT_FPM_TPL $SHARE_DIRECTORY/php-fpm.conf.default
     process_file_template $PHP_DEFAULT_INITD_TPL $SHARE_DIRECTORY/init.d/$PHP_INITD_SCRIPT_NAME
+    
 
     process_file_template $PHP_TEMPLATE_PATH/deb_scripts_vars.template.sh "$SHARE_DIRECTORY/deb-scripts/deb_scripts_vars.sh"
+    
+    local apache2_example=$PHP_TEMPLATE_PATH/apache2.conf_available.template.conf 
+    process_file_template $apache2_example $SHARE_DIRECTORY/apache2/$PHP_PACKAGE_NAME.conf
 
-    sudo cp $BASEDIR/deb-scripts/php/*.sh $SHARE_DIRECTORY/deb-scripts
+    # DEB_SCRIPTS
+    local deb_script_tpl="$PHP_TEMPLATE_PATH/deb-scripts" 
+
+    process_file_template $deb_script_tpl/after_install.tpl.sh $SHARE_DIRECTORY/deb-scripts/after_install.sh
+    process_file_template $deb_script_tpl/after_upgrade.tpl.sh $SHARE_DIRECTORY/deb-scripts/after_upgrade.sh
+    process_file_template $deb_script_tpl/before_install.tpl.sh $SHARE_DIRECTORY/deb-scripts/before_install.sh
+    process_file_template $deb_script_tpl/before_remove.tpl.sh $SHARE_DIRECTORY/deb-scripts/before_remove.sh
+    process_file_template $deb_script_tpl/before_upgrade.tpl.sh $SHARE_DIRECTORY/deb-scripts/before_upgrade.sh
 
     create_config_extensions
     
@@ -431,9 +446,9 @@ create_deb_archive() {
 # Installation
 ###############################################
 
-#set_configuration_files;
-#create_deb_archive;
-#exit
+set_configuration_files;
+create_deb_archive;
+exit
 
 install_system_dependencies;
 
@@ -457,10 +472,4 @@ fix_permissions;
 ####start_server_php_fpm
 
 create_deb_archive;
-
-
-
-
-
-
 

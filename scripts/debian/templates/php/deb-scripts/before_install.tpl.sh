@@ -3,10 +3,10 @@
 # Scripts to execute on install 
 # 
 
-BASEDIR=$(dirname $(readlink -f $0))
+#
+# CONFIGURATION
+# 
 
-set -e
-
-source "$BASEDIR/common.sh"
 
 echo "Success"
+

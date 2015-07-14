@@ -4,8 +4,27 @@
 # 
 
 
-BASEDIR=$(dirname $(readlink -f $0))
-source "$BASEDIR/deb_scripts_vars.sh"
+# ===================== CUT FROM HERE ================
+
+#
+# CONFIGURATION
+# 
+
+PHP_PREFIX={{php_prefix}}
+INITD_SCRIPT_NAME={{init_d_name}}
+SHARE_DIR=$PHP_PREFIX/share
+CONF_DIR=$PHP_PREFIX/etc
+PHP_INI_FILE=$CONF_DIR/php.ini
+PHP_FPM_CONF_FILE=$CONF_DIR/php-fpm.conf
+EXT_CONF_FILE=$CONF_DIR/conf.d/loaded_extensions.ini
+OPCACHE_INI_FILE=$CONF_DIR/conf.d/ext-opcache.ini
+INITD_SCRIPT=/etc/init.d/$INITD_SCRIPT_NAME
+
+
+
+#################
+# Functions
+#################
 
 uprc="/usr/sbin/update-rc.d"
 
@@ -34,6 +53,8 @@ set_default_extensions_ini() {
     fi
 }
 
+
+
 set_default_phpfpm_conf() {
     echo "[+] Setting php-fpm conf file"    
     if [ ! -e "$PHP_FPM_CONF_FILE" ]; then
@@ -51,6 +72,16 @@ set_default_opcache_ini() {
         echo "* opcache ini file copied '$OPCACHE_INI_FILE'"
     else 
         echo "* Skipping, opcache ini file already exists"
+    fi
+}
+
+install_apache2_config() {
+    echo "[+] Installing apache2 configuration"
+    local apache_dir="/etc/apache2/conf-available"
+    if [ -d "$apache_dir" ]; then
+        cp $SHARE_DIR/apache2/*.conf $apache_dir || "Warning, cannot create apache conf files"
+    else 
+        echo "Apache2 conf avaible already exists"
     fi
 }
 
@@ -187,4 +218,21 @@ purge_all_config_files() {
     purge_opcache_ini;
     purge_phpfpm_conf;
 }
+
+
+# ===================== TO HERE ================
+
+########################################
+# Running
+########################################
+
+set_all_default_config_files;
+install_apache2_config;
+ensure_init_d;
+
+restart_phpfpm;
+
+ensure_always_start;
+
+echo "Success"
 
