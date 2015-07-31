@@ -82,7 +82,6 @@ install_apt_mariadb_source() {
 #
 # * Build environment
 #
-
 install_build_env() {
     echo "* Installing build environment"
     sudo apt-get --yes install build-essential clang autoconf gcc bison lemon g++ re2c flex shtool libtool pkg-config
@@ -246,7 +245,7 @@ install_webmin() {
 install_php_build_deps() {
     echo "* Install php deps minimal env"
     sudo apt-get --yes install libmariadbclient18 libmariadbclient-dev
-    sudo apt-get --yes install libmemcache-dev libmemcached-dev libevent-dev
+    sudo apt-get --yes install libmemcache-dev libmemcached-dev libevent-dev libjsoncpp0 libjsoncpp-dev 
     sudo apt-get --yes install php5-cli php5-mysqlnd libunistring0 libvpx-dev uuid-dev libmagic-dev libwrap0-dev libsystemd-daemon-dev libsasl2-dev unixodbc-dev libgd-dev libenchant-dev libpspell-dev libpq-dev libpng12-dev libbz2-dev libssl-dev libsqlite3-dev libmcrypt-dev libfreetype6-dev zlib1g-dev libgmp-dev libgmp3-dev libxml2 libxml2-dev libcurl4-openssl-dev libfreetype6-dev zlib1g-dev libldap2-dev libkrb5-dev libssh-dev libzip-dev libjpeg-progs libpcre++-dev libjpeg8-dev libtiff5-dev libmagick++-dev libmagick++5 libmagickwand-dev libc-client2007e-dev libt1-dev libicu-dev libc-client2007e-dev libxslt1-dev libmcrypt-dev pkg-config libfcgi0ldbl libfcgi-dev libreadline6-dev libevent-dev libmhash-dev libtinfo5 libtinfo-dev
     if [ ! -e "/usr/lib/x86_64-linux-gnu/libc-client.a" ]; then 
         sudo ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a

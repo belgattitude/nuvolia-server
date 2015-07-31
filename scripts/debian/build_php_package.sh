@@ -241,15 +241,28 @@ install_pear_libs() {
     for pear_package in $PHP_PEAR_INSTALL
     do 
         echo " * Installing $pear_package:"
-        sudo $pear_command --alldeps install $pear_package
+        sudo $pear_command upgrade --alldeps $pear_package
     done 
 
 }
 
+install_jsonc() {
+    local pecl_command=$PHP_INSTALL_PATH/bin/pecl
+    local jsonc_version=$PHP_EXT_JSONC_VERSION
+
+    sudo $pecl_command download jsonc-$jsonc_version
+    tar zxvf jsonc-$jsonc_version.tgz
+    cd jsonc-$jsonc_version
+    $PHP_INSTALL_PATH/bin/phpize
+    ./configure --with-php-config=$PHP_INSTALL_PATH/bin/php-config --with-jsonc
+    make
+    sudo make install
+
+}
 
 install_pecl_extensions() {
 
-    pecl_command=$PHP_INSTALL_PATH/bin/pecl
+    local pecl_command=$PHP_INSTALL_PATH/bin/pecl
     sudo $pecl_command update-channels || echo "nothing to do"
 
     local IFS=" "
@@ -258,11 +271,8 @@ install_pecl_extensions() {
         echo " * Installing $pecl_package:"
         # The sh -c is meant to send an enter when imagick extension for example
         # ask an input
-        sudo sh -c 'printf "\n" | '$pecl_command' install '$pecl_package'' || echo "Install failed or skipped, actually we don't know, êcl magic ;)"
+        sudo sh -c 'printf "\n" | '$pecl_command' install '$pecl_package'' || echo "Install failed or skipped, actually we don't know, pecl magic ;)"
     done 
-
-    
-
 
 }
 
@@ -314,7 +324,6 @@ process_file_template() {
     cmd=$cmd"s|'{{init_d_name}}'|'$PHP_INITD_SCRIPT_NAME'|g; "
     cmd=$cmd"s|'{{name}}'|'$PHP_PACKAGE_NAME'|g'"
 
-
     cmd="$cmd $tpl_file"
     log debug "$cmd"
 
@@ -332,8 +341,6 @@ process_file_template() {
     if [ ! -f $dest_file ]; then
         build_error_exit 10 "Template substitution error, final '$dest_file' was not created"
     fi
-
-    
 
 }
 
@@ -497,12 +504,12 @@ configure_php;
 
 make_and_install_php;
 
-install_pecl_extensions;
-
 set_configuration_files;
 
-install_pear_libs;
 install_pecl_extensions;
+install_jsonc;
+
+install_pear_libs;
 
 fix_permissions;
 
