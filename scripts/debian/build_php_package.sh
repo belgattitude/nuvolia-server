@@ -428,14 +428,53 @@ create_deb_archive() {
            --description \"$PHP_PACKAGE_DESCRIPTION\" \
            --maintainer \"$PHP_PACKAGE_MAINTAINER\" $PHP_PACKAGE_DEPS $PHP_PACKAGE_RECOMMEND \
            $scripts \
-           --deb-init $INITD_SCRIPT \
            --verbose --force"
    echo $cmd
    eval $cmd
    local ret="$?"
    cd $BASEDIR
    echo "Return code: $ret";
-   if [ $ret -ne 0 ]; then 
+   if [ $ret -ne 0 ]; then
+       build_error_exit 5 "Creation of deb archive failed"
+   fi
+   
+}
+
+
+create_deb_cli_archive() {
+
+   PHP_PACKAGE_DEPS="$PHP_PACKAGE_NAME"
+   
+
+   echo "#########################################################"
+   echo " Packaging with: "
+   
+   cd $BUILD_OUTPUT_DIR
+
+   local tpl_directory=$BASEDIR/templates/php-cli
+
+   local deb_scripts_path="$tpl_directory/deb-scripts"
+
+   local scripts=""
+   scripts="$scripts --before-install $deb_scripts_path/create_cli_links.sh"
+   scripts="$scripts --before-upgrade $deb_scripts_path/create_cli_links.sh"
+   scripts="$scripts --before-remove $deb_scripts_path/remove_cli_links.sh"
+
+   cmd="fpm -s dir -t deb -C $tpl_directory/content --prefix $PHP_PACKAGE_PATH \
+           --name $PHP_CLI_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
+           --description \"$PHP_CLI_PACKAGE_DESCRIPTION\" \
+           --maintainer \"$PHP_PACKAGE_MAINTAINER\" -d $PHP_PACKAGE_DEPS \
+           --template-scripts --template-value php_install_path=$PHP_INSTALL_PATH \
+           $scripts \
+           --verbose --force \
+           ."
+
+   echo $cmd
+   eval $cmd
+   local ret="$?"
+   cd $BASEDIR
+   echo "Return code: $ret";
+   if [ $ret -ne 0 ]; then
        build_error_exit 5 "Creation of deb archive failed"
    fi
    
@@ -445,6 +484,7 @@ create_deb_archive() {
 ###############################################
 # Installation
 ###############################################
+
 
 
 install_system_dependencies;
@@ -470,3 +510,4 @@ fix_permissions;
 
 create_deb_archive;
 
+create_deb_cli_archive;

@@ -70,8 +70,6 @@ download_phpexcel() {
 
 make_extension() {
 
-
-
     local libxl_dir=$LIBXL_INSTALL_PATH
     local libxl_lib_dir="$libxl_dir/lib64"
 
@@ -110,10 +108,10 @@ create_deb_archive() {
    cmd="fpm -s dir -t deb \
            --name $PHPEXCEL_PACKAGE_NAME --version $PHPEXCEL_PACKAGE_VERSION --url $PHPEXCEL_PACKAGE_URL \
            --description \"$PHPEXCEL_PACKAGE_DESCRIPTION\" \
-            --depends=\"$PHP_PACKAGE_NAME (=$PHP_PACKAGE_VERSION)\" \
+           --depends=\"$PHP_PACKAGE_NAME (=$PHP_PACKAGE_VERSION)\" \
            --depends=\"$LIBXL_PACKAGE_NAME (=$LIBXL_PACKAGE_VERSION)\" \
            --maintainer \"$PHPEXCEL_PACKAGE_MAINTAINER\" --verbose --force \
-            $EXT_FILE $CONF_FILE"
+           $EXT_FILE $CONF_FILE"
    echo $cmd
    eval $cmd
    local ret="$?"

@@ -4,6 +4,8 @@
 # 
 
 # Script should fail once a command invocation itself fails.
+
+
 set -e
 
 #
@@ -256,7 +258,7 @@ install_php_build_deps() {
 }
 
 
-install_locale "en_GB.UTF-8"£
+install_locale "en_GB.UTF-8"
 
 install_apt_main_sources
 install_apt_mariadb_source
