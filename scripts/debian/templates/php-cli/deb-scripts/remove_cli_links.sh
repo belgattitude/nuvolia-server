@@ -3,7 +3,7 @@
 
 local_bindir="/usr/local/bin";
 
-php_binaries="php pear phpize pecl phar php-config"
+php_binaries="php pear peardev phpize pecl phar phar.phar php-config"
 for f in $php_binaries
 do
   #bin_file="$nuvolia_bin_dir/$f"

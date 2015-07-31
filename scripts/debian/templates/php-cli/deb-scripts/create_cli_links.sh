@@ -4,7 +4,7 @@
 local_bindir="/usr/local/bin";
 php_install_path=<%= php_install_path %>
 
-php_binaries="php pear phpize pecl phar php-config"
+php_binaries="php pear peardev phpize pecl phar phar.phar php-config"
 for f in $php_binaries
 do
   bin_file="$php_install_path/bin/$f"
