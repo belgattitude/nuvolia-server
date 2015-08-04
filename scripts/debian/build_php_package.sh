@@ -248,18 +248,21 @@ install_pear_libs() {
 
 install_jsonc() {
     
-    cd $PHP_BUILD_PATH;
 
-    local pecl_command=$PHP_INSTALL_PATH/bin/pecl
-    local jsonc_version=$PHP_EXT_JSONC_VERSION
+    if [ "$PHP_EXT_JSONC_VERSION" != "" ]; then
+        cd $PHP_BUILD_PATH;
 
-    sudo $pecl_command download jsonc-$jsonc_version
-    tar zxvf jsonc-$jsonc_version.tgz
-    cd jsonc-$jsonc_version
-    $PHP_INSTALL_PATH/bin/phpize
-    ./configure --with-php-config=$PHP_INSTALL_PATH/bin/php-config --with-jsonc
-    make
-    sudo make install
+        local pecl_command=$PHP_INSTALL_PATH/bin/pecl
+        local jsonc_version=$PHP_EXT_JSONC_VERSION
+
+        sudo $pecl_command download jsonc-$jsonc_version
+        tar zxvf jsonc-$jsonc_version.tgz
+        cd jsonc-$jsonc_version
+        $PHP_INSTALL_PATH/bin/phpize
+        ./configure --with-php-config=$PHP_INSTALL_PATH/bin/php-config --with-jsonc
+        make
+        sudo make install
+    fi
 
 }
 
