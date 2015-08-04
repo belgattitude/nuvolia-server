@@ -247,6 +247,9 @@ install_pear_libs() {
 }
 
 install_jsonc() {
+    
+    cd $PHP_BUILD_PATH;
+
     local pecl_command=$PHP_INSTALL_PATH/bin/pecl
     local jsonc_version=$PHP_EXT_JSONC_VERSION
 
