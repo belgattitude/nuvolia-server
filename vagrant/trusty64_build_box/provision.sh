@@ -84,7 +84,7 @@ install_apt_mariadb_source() {
 #
 install_build_env() {
     echo "* Installing build environment"
-    sudo apt-get --yes install build-essential clang autoconf gcc bison lemon g++ re2c flex shtool libtool pkg-config
+    sudo apt-get --yes install build-essential ant clang autoconf gcc bison lemon g++ re2c flex shtool libtool pkg-config
 }
 
 #
@@ -132,6 +132,8 @@ install_oracle_java_env() {
     echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
     #sudo apt-get --yes install oracle-java7-installer oracle-java8-installer oracle-java8-set-default 2>&1
     sudo apt-get --yes install oracle-java8-installer oracle-java8-set-default 2>&1
+
+    
 }
 
 
