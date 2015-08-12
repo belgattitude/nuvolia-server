@@ -209,7 +209,13 @@ install_horrible_fpm_patch() {
 }
 
 install_gem_webdev() {
-    sudo gem install compass sass
+    sudo gem install compass sass 
+}
+
+install_wkhtml2pdf() {
+    sudo apt-get --yes install xvfb xfonts-75dpi
+    wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb -O /tmp/wkhtml.deb
+    sudo dpkg -i /tmp/wkhtml.deb
 }
 
 #
@@ -280,5 +286,6 @@ install_horrible_fpm_patch
 
 #install_gem_webdev
 
-install_php_build_deps
+install_wkhtml2pdf
 
+install_php_build_deps
