@@ -54,7 +54,7 @@ install_apt_main_sources() {
 
 install_apt_mariadb_source() {
 
-    echo "* Install apt_mariadb_source 10.0"
+    echo "* Install apt_mariadb_source 10.1"
 
     if [ ! -e "/usr/bin/lsb_release" ]; then
         sudo apt-get install --yes lsb-release
@@ -66,7 +66,7 @@ install_apt_mariadb_source() {
     local detected_changes=0
 
     if [ ! -e "/etc/apt/sources.list.d/mariadb.list" ]; then
-        sudo sh -c 'echo "deb http://ftp.osuosl.org/pub/mariadb/repo/10.0/ubuntu '${DISTRIB_CODENAME}' main" > /etc/apt/sources.list.d/mariadb.list'
+        sudo sh -c 'echo "deb http://ftp.osuosl.org/pub/mariadb/repo/10.1/ubuntu '${DISTRIB_CODENAME}' main" > /etc/apt/sources.list.d/mariadb.list'
         sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
         let "detected_changes+=1"
     fi
@@ -269,6 +269,9 @@ install_locale "en_GB.UTF-8"
 
 install_apt_main_sources
 install_apt_mariadb_source
+
+sudo apt-get update
+sudo apt-get --yes dist-upgrade
 
 install_build_env
 
