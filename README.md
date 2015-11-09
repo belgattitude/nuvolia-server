@@ -28,7 +28,6 @@ vagrant ssh -c "/shared/install/build_php_ext_libxl_package.sh"
 # Alternatively, all components can be build with
 vagrant ssh -c "/shared/install/build_all.sh"
 
-
 ```
 
 If no error, the generated builds are generated on the host in the 'builds' directory.
