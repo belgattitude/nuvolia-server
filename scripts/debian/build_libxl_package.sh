@@ -77,7 +77,7 @@ download_libxl_archive() {
    # Create install directory
    eval "sudo mkdir -p $LIBXL_INSTALL_PATH"
    # COPY to destination
-   cmd="sudo cp -r $LIBXL_BUILD_PATH/libxl-$LIBXL_ARCHIVE_VERSION $LIBXL_INSTALL_PATH"
+   cmd="sudo cp -r $LIBXL_BUILD_PATH/libxl-$LIBXL_ARCHIVE_VERSION/* $LIBXL_INSTALL_PATH"
    eval $cmd
 }
 
