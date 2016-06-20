@@ -74,8 +74,9 @@ download_libxl_archive() {
         build_error_exit 4 "Cannot extract archive"
    fi
 
-   # COPY to destination
+   # Create install directory
    eval "sudo mkdir -p $LIBXL_INSTALL_PATH"
+   # COPY to destination
    cmd="sudo cp -r $LIBXL_BUILD_PATH/libxl-$LIBXL_ARCHIVE_VERSION $LIBXL_INSTALL_PATH"
    eval $cmd
 }
