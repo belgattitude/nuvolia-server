@@ -86,7 +86,6 @@ create_deb_archive() {
    cd $BUILD_OUTPUT_DIR
    echo "#########################################################"
    echo " Packaging with: "
-   
 
    cmd="fpm -s dir -t deb \
            --name $LIBXL_PACKAGE_NAME --version $LIBXL_PACKAGE_VERSION --url $LIBXL_PACKAGE_URL \
