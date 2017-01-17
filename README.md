@@ -1,8 +1,9 @@
-# Nuvolia server factory
+# Experiment on how to create php debs.
 
-Produce ready-to-install deb packages for latest php on debian/ubuntu.
+Produce ready-to-install deb packages for latest php on debian/ubuntu with vagrant an puppet.
 
-Heavily rely on Vagrant and puppet for automatic preparation of system boxes, used for compilation and tests.
+> **Warning** Don't use it ;) it's an experiment and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
+> if you need to install different versions of php on Ubuntu/Debian. 
 
 
 ## Requirements
@@ -10,8 +11,7 @@ Heavily rely on Vagrant and puppet for automatic preparation of system boxes, us
 - Ubuntu 14.04+ 64 bits
 - Vagrant/Virtualbox
 
-
-## Install php server
+## Build a the debs
 
 For ubuntu/trusty64
 
@@ -38,5 +38,4 @@ To install
 cd ./builds
 sudo dpkg -i nuvolia-server-<version>.deb
 ```
-
 
