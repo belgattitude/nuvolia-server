@@ -3,7 +3,7 @@
 Produce ready-to-install deb packages for latest php on debian/ubuntu with vagrant/puppeta and a lot of bash scripting.
 
 > **Warning** Don't use it ;) it's an experiment and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
-> if you need to install different versions of php on Ubuntu/Debian. 
+> if you need to install different versions of php on Ubuntu/Debian. Still some examples can be useful, make your own idea. 
 
 
 ## Requirements
@@ -17,7 +17,7 @@ For ubuntu/trusty64
 
 ```shell
 cd <my_install_dir>
-https://github.com/belgattitude/nuvolia-server.git
+git clone https://github.com/belgattitude/nuvolia-server.git
 cd ./nuvolia-server/vagrant/trusty64_build_box
 vagrant up
 vagrant provision 
