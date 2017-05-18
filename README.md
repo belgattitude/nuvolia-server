@@ -2,7 +2,7 @@
 
 Produce ready-to-install deb packages for latest php on debian/ubuntu with vagrant/puppet and a lot of bash scripting.
 
-> **Warning** Don't use it ;) **it's an experiment and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
+> **Warning** Don't use it ;) **it's an experiment** and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
 > if you need to install different versions of php on Ubuntu/Debian. Some examples might reveal useful, check the sources and make your own idea. 
 
 
