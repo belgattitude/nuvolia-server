@@ -1,4 +1,4 @@
 *.deb
 .idea
-MOK.der
-MOK.priv
+*.der
+*.priv
