@@ -1,3 +1,4 @@
-/nbproject/private/
 *.deb
 .idea
+MOK.der
+MOK.priv
