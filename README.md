@@ -45,6 +45,20 @@ $ cd ./builds
 $ sudo dpkg -i nuvolia-server-<version>.deb
 ```
 
+*Packages will be installed in `/opt/nuvolia`.*
+
+## Usage
+
+### Service
+
+```shell
+sudo service nuvolia-phpfpm restart
+```
+
+### Configuration
+
+WIP
+
 ## License
 
 MIT License
