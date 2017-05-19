@@ -1,15 +1,16 @@
-# Experiment on how to create php debs.
+# Nuvolia server
 
-Produce ready-to-install deb packages for latest php on debian/ubuntu with vagrant/puppet and a lot of bash scripting.
+Produce ready-to-install deb packages for custom PHP install (php-fpm, php-cli, libxl) 
+on debian/ubuntu with vagrant/puppet and a lot of bash scripting. MIT licensed.
 
 > **Warning** Don't use it ;) **it's an experiment** and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
-> if you need to install different versions of php on Ubuntu/Debian. Some examples might reveal useful, check the sources and make your own idea. 
-
+> if you need to install different versions of php on Ubuntu/Debian.    
+> Some examples might reveal useful, check the sources and make your own idea. 
 
 ## Requirements
 
-- Ubuntu 14.04+, 16.04+ 64 bits
-- Vagrant/Virtualbox
+- Linux 64 bits
+- Vagrant and Virtualbox
 
 ## Clone the project
 
@@ -43,4 +44,8 @@ To install
 $ cd ./builds
 $ sudo dpkg -i nuvolia-server-<version>.deb
 ```
+
+## License
+
+MIT License
 
