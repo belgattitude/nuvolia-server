@@ -235,7 +235,7 @@ install_pear_libs() {
 
     pear_command=$PHP_INSTALL_PATH/bin/pear
     sudo $pear_command update-channels  
-    sudo $pear_command upgrade
+    sudo $pear_command upgrade --force
 
     local IFS=" "
     for pear_package in $PHP_PEAR_INSTALL

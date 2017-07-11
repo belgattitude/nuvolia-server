@@ -289,6 +289,6 @@ install_horrible_fpm_patch
 
 #install_gem_webdev
 
-install_wkhtml2pdf
+#install_wkhtml2pdf
 
 install_php_build_deps
