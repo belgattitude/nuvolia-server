@@ -100,13 +100,14 @@ install_puppet() {
 
     if [ ! -e "/etc/apt/sources.list.d/puppetlabs.list" ]; then 
         sudo sh -c 'echo "deb http://apt.puppetlabs.com '${DISTRIB_CODENAME}' main" > /etc/apt/sources.list.d/puppetlabs.list';
-        sudo apt-key adv --recv-keys --keyserver pgp.mit.edu 47B320EB4C7C375AA9DAE1A01054B7A24BD6EC30;
+        sudo apt-key adv --recv-keys --keyserver pgp.mit.edu 6F6B15509CF8E59E6E469F327F438280EF8D349F;
+        gpg --keyserver pgp.mit.edu --recv-key 7F438280EF8D349F
+        gpg -a --export EF8D349F | sudo apt-key add -
         sudo apt-get update
         sudo apt-get upgrade
     fi
 
     sudo apt-get --yes install puppet
-
 }
 
 
@@ -189,7 +190,7 @@ install_ruby_env_1_9() {
 install_gem_fpm() {
     echo " * Install fpm packager with gem"
     if [ ! -e "/usr/local/bin/fpm" ]; then
-        sudo gem install fpm
+        sudo gem install fpm -v 1.9.3
     fi
 }
 
