@@ -1,11 +1,13 @@
 # Nuvolia server
 
+> **ABANDONED**, use [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php) instead.
+> PHP 5.6 soon to be EOL'd.
+
+> For the geeks, the various shell scripts present in this repo can give 
+> nice examples for to create debian packages with [fpm](https://github.com/jordansissel/fpm). 
+
 Produce ready-to-install deb packages for custom PHP install (php-fpm, php-cli, libxl) 
 on debian/ubuntu with vagrant/puppet and a lot of bash scripting. MIT licensed.
-
-> **Warning** Don't use it ;) **it's an experiment** and prefer [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php)
-> if you need to install different versions of php on Ubuntu/Debian.    
-> Some examples might reveal useful, check the sources and make your own idea. 
 
 ## Requirements
 
