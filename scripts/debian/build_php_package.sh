@@ -473,7 +473,7 @@ create_deb_cli_archive() {
    scripts="$scripts --before-upgrade $deb_scripts_path/create_cli_links.sh"
    scripts="$scripts --before-remove $deb_scripts_path/remove_cli_links.sh"
 
-   cmd="fpm -s dir -t deb -C $tpl_directory/content --prefix $PHP_PACKAGE_PATH \
+   cmd="fpm -s dir -t deb -C $tpl_directory/ --prefix $PHP_PACKAGE_PATH \
            --name $PHP_CLI_PACKAGE_NAME --version $PHP_PACKAGE_VERSION --url $PHP_PACKAGE_URL \
            --description \"$PHP_CLI_PACKAGE_DESCRIPTION\" \
            --maintainer \"$PHP_PACKAGE_MAINTAINER\" -d $PHP_PACKAGE_DEPS \
