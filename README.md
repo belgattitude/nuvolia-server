@@ -1,6 +1,6 @@
 # Nuvolia server
 
-> **ABANDONED**, use [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php) instead.
+> **NO LONGER MAINTAINED**, use [the ondrej/ppa repo](https://launchpad.net/~ondrej/+archive/ubuntu/php) instead.
 > PHP 5.6 soon to be EOL'd.
 
 > For the geeks, the various shell scripts present in this repo can give 
